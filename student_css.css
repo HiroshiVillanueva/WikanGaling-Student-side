@@ -1,0 +1,163 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #fdf6ec;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 800px;
+    margin: 40px auto;
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+
+h1, h2 {
+    text-align: center;
+    color: #333;
+}
+
+.question {
+    display: none;
+    padding: 10px;
+    margin-bottom: 20px;
+}
+
+.question.active {
+    display: block;
+}
+
+.options {
+    margin-top: 10px;
+}
+
+.option {
+    margin: 5px 5px 5px 0;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-block;
+    user-select: none;
+}
+
+.option.correct {
+    background: #d4edda;
+    border-color: #28a745;
+}
+
+.option.wrong {
+    background: #f8d7da;
+    border-color: #dc3545;
+}
+
+.option.selected {
+    border: 2px solid #3498db;
+}
+
+.nav-buttons {
+    text-align: center;
+    margin-top: 20px;
+}
+
+button {
+    padding: 10px 18px;
+    margin: 5px;
+    border: none;
+    border-radius: 8px;
+    background: #3498db;
+    color: white;
+    cursor: pointer;
+}
+
+button:disabled {
+    background: #aaa;
+}
+
+.feedback {
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+.match-container {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+}
+
+.match-list {
+    width: 45%;
+}
+
+.match-item {
+    padding: 8px;
+    margin: 5px;
+    background: #f0f0f0;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    text-align: center;
+    user-select: none;
+}
+
+.match-item img {
+    max-width: 100px;
+    height: auto;
+    display: block;
+    margin: auto;
+}
+
+.match-item.matched {
+    background: #d4edda;
+    border-color: #28a745;
+}
+
+.match-item.selected {
+    outline: 3px solid #3b82f6;
+}
+
+.blanks-container .blank {
+    border-bottom: 2px solid #333;
+    min-width: 80px;
+    display: inline-block;
+    margin: 0 5px;
+    padding: 5px;
+    text-align: center;
+}
+
+.options-bank {
+    margin-top: 10px;
+}
+
+.options-bank .option {
+    cursor: grab;
+    margin: 5px;
+    display: inline-block;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #eee;
+}
+
+.blank.placeholder {
+    display: inline-block;
+    min-width: 120px;
+    padding: 6px;
+    border: 2px dashed #999; /* visual placeholder */
+    border-radius: 6px;
+    text-align: center;
+    background: #f9f9f9;
+    margin: 0 5px;
+    vertical-align: middle;
+    color: #555;
+    font-style: italic;
+}
+
+.blank.placeholder.filled {
+    border: 2px solid #3498db;
+    background: #e0f0ff;
+    font-style: normal;
+    color: #000;
+}

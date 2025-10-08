@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Interactive Student Module</title>
+<link rel="stylesheet" href="student_css.css">
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
+<script src="student_js.js"></script>
+</head>
+<body>
+
+<!-- ----------------- Student Landing / Student Info ----------------- -->
+<div class="container" id="landing">
+  <h1>Welcome to Student Module</h1>
+  <p style="text-align:center;">Please enter your full name to continue.</p>
+  <div style="text-align:center; margin-top:15px;">
+    <input type="text" id="studentName" placeholder="Full Name" style="padding:8px; width:60%; border-radius:6px; border:1px solid #ccc;">
+    <br><br>
+    <button onclick="submitStudentInfo()">Continue</button>
+  </div>
+</div>
+
+<!-- ----------------- Module Landing ----------------- -->
+<div class="container" id="moduleLanding" style="display:none; text-align:center;">
+  <h2 id="moduleLandingTitle"></h2>
+  <p id="moduleLandingDesc"></p>
+  <p>Click the button below to start the module and answer the questions.</p>
+  <button id="startModuleBtn">Start Module</button>
+</div>
+
+<!-- ----------------- Module Container ----------------- -->
+<div class="container" id="moduleContainer" style="display:none;">
+  <h2 id="moduleTitle"></h2>
+  <div id="questionsContainer"></div>
+  <div class="nav-buttons">
+    <button id="nextBtn" onclick="nextQuestion()" disabled>SUSUNOD</button>
+  </div>
+</div>
+
+<!-- ----------------- Result Container ----------------- -->
+<div class="container" id="resultContainer" style="display:none;">
+  <h2>Module Results</h2>
+  <p id="scoreText" style="text-align:center; font-weight:bold;"></p>
+
+  <!-- Top buttons: Retry & Exit -->
+  <div style="text-align:center; margin-top:20px;">
+    <button id="retryBtn">Retry Module</button>
+    <button id="exitBtn">Exit Module</button>
+  </div>
+
+  <!-- Summary toggle at bottom -->
+  <div style="text-align:center; margin-top:20px;">
+    <button id="summaryBtn">View Summary</button>
+  </div>
+
+  <!-- Summary will appear under View Summary -->
+  <div id="summaryContent" style="margin-top:20px; display:none;"></div>
+</div>
+
+<script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.22.5/babel.min.js"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+
+</body>
+</html>
