@@ -5,8 +5,24 @@ const SUPABASE_BUCKET_URL = "https://aliyyqinorqlwmjhbqza.supabase.co/storage/v1
 
 //const MODULE_ID = "51eea546-24a5-46c2-87f4-493d71ae8030"; // sample module id -- later to be replaced with generated url
 
-let MODULE_ID = null
+// ----------------- Helper for Signed URLs -----------------
+async function getSignedUrl(path) {
+  try {
+    const { data, error } = await supabase
+      .storage
+      .from('form_images') 
+      .createSignedUrl(path, 2592000); // valid for 30 days
 
+    if (error) throw error;
+    return data.signedUrl;
+  } catch (err) {
+    console.error("Signed URL error for:", path, err);
+    return null;
+  }
+}
+
+
+let MODULE_ID = null
 window.onload = function() {
     const params = new URLSearchParams(window.location.search);
     MODULE_ID = params.get('form_id'); 
@@ -106,6 +122,16 @@ document.getElementById('startModuleBtn').onclick = () => {
     showQuestion(currentIndex);
 };
 
+// ----------------- Randomizer -----------------
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+
 // ----------------- Load Module -----------------
 async function loadModule() {
   document.getElementById('landing').style.display='none';
@@ -142,41 +168,41 @@ function renderQuestions() {
         div.className = 'question';
         div.id = 'q' + index;
 
+        // Question title
         const title = document.createElement('h3');
         title.textContent = `${index + 1}. ${q.text}`;
         div.appendChild(title);
 
+        // Question image
         if (q.image) {
-          const qImg = document.createElement('img');
-          qImg.src = `${SUPABASE_BUCKET_URL}${q.image}`;  
-          qImg.alt = 'Question image';
-          qImg.style.maxWidth = '200px';
-          qImg.style.display = 'block';
-          qImg.style.margin = '10px 0';
-          div.appendChild(qImg);
-      }
-
+            const qImg = document.createElement('img');
+            getSignedUrl(q.image).then(url => { if (url) qImg.src = url; });
+            qImg.alt = 'Question image';
+            qImg.style.maxWidth = '200px';
+            qImg.style.display = 'block';
+            qImg.style.margin = '10px 0';
+            div.appendChild(qImg);
+        }
 
         // ---------------- Multiple Choice ----------------
         if (q.type === 'multiple_choice') {
             const opts = document.createElement('div');
             opts.className = 'options';
 
-            q.options.forEach((opt, i) => {
+            shuffleArray(q.options).forEach((opt, i) => {
                 const btn = document.createElement('div');
                 btn.className = 'option';
                 btn.innerHTML = opt.text;
 
-               if (opt.image) {
-                  const img = document.createElement('img');
-                  img.src = `${SUPABASE_BUCKET_URL}${opt.image}`; 
-                  img.alt = opt.text || 'Option image';
-                  img.style.maxWidth = '120px';
-                  img.style.display = 'block';
-                  img.style.marginTop = '5px';
-                  btn.appendChild(img);
-              }
-
+                if (opt.image) {
+                    const img = document.createElement('img');
+                    getSignedUrl(opt.image).then(url => { if (url) img.src = url; });
+                    img.alt = opt.text || 'Option image';
+                    img.style.maxWidth = '120px';
+                    img.style.display = 'block';
+                    img.style.marginTop = '5px';
+                    btn.appendChild(img);
+                }
 
                 btn.onclick = () => validateMCQ(index, i, btn);
                 opts.appendChild(btn);
@@ -194,57 +220,86 @@ function renderQuestions() {
             renderFillInBlanks(index, q, div);
         }
 
-        // ---------------- Connecting Dots ----------------
+        // ---------------- Matching Type ----------------
         if (q.type === 'connecting_dots') {
             const matchContainer = document.createElement('div');
             matchContainer.className = 'match-container';
-            const left = document.createElement('div');
-            left.className = 'match-list';
-            const right = document.createElement('div');
-            right.className = 'match-list';
+            matchContainer.style.display = 'grid';
+            matchContainer.style.gridTemplateColumns = '1fr 1fr';
+            matchContainer.style.rowGap = '25px';
+            matchContainer.style.columnGap = '100px';
+            matchContainer.style.marginTop = '40px';
+            matchContainer.style.justifyItems = 'center';
+            matchContainer.style.alignItems = 'stretch';
 
-            const textItems = q.options.filter((_, i) => i % 2 === 0);
-            const imageItems = q.options.filter((_, i) => i % 2 !== 0);
-
-            q._matchedPairs = q._matchedPairs || {};
-
-            textItems.forEach(item => {
-                const divItem = document.createElement('div');
-                divItem.className = 'match-item';
-                divItem.textContent = item.text;
-                divItem.dataset.id = item.id;
-                if (item.matchId) divItem.dataset.matchId = item.matchId;
-                divItem.onclick = () => handleMatchClick(divItem, q);
-                left.appendChild(divItem);
+            // Group options by matchId
+            const pairs = {};
+            q.options.forEach(opt => {
+                if (!pairs[opt.matchId]) pairs[opt.matchId] = [];
+                pairs[opt.matchId].push(opt);
             });
 
-            imageItems.forEach(item => {
-                const divItem = document.createElement('div');
-                divItem.className = 'match-item';
-                divItem.dataset.id = item.id;
-                if (item.matchId) divItem.dataset.matchId = item.matchId;
+            // Shuffle pairs order
+            shuffleArray(Object.values(pairs)).forEach(pair => {
 
-                if (item.image) {
-                  const img = document.createElement('img');
-                  img.src = `${SUPABASE_BUCKET_URL}${item.image}`; 
-                  img.alt = item.text || 'Matching image';
-                  img.style.maxWidth = '120px';
-                  img.style.display = 'block';
-                  img.style.margin = '5px auto';
-                  divItem.appendChild(img);
-              }
-              else {
-                    divItem.textContent = item.text;
-                }
+                // Randomize left/right placement for each pair
+                const [first, second] = Math.random() < 0.5 ? [pair[0], pair[1]] : [pair[1], pair[0]];
 
-                divItem.onclick = () => handleMatchClick(divItem, q);
-                right.appendChild(divItem);
+                const makeItemDiv = item => {
+                    const div = document.createElement('div');
+                    div.className = 'match-item';
+                    div.style.display = 'flex';
+                    div.style.flexDirection = 'column';
+                    div.style.alignItems = 'center';
+                    div.style.justifyContent = 'center';
+                    div.style.textAlign = 'center';
+                    div.style.background = '#f8f8f8';
+                    div.style.borderRadius = '10px';
+                    div.style.padding = '17px 20px';
+                    div.style.minWidth = '150px';
+                    div.style.height = '150px';
+                    div.style.cursor = 'pointer';
+                    div.dataset.id = item.id;
+                    div.dataset.matchId = item.matchId;
+                    div.onclick = () => handleMatchClick(div, q);
+
+                    if (item.text && item.image) {
+                        const text = document.createElement('div');
+                        text.textContent = item.text;
+                        text.style.fontSize = '18px';
+                        text.style.marginBottom = '10px';
+                        div.appendChild(text);
+
+                        const img = document.createElement('img');
+                        img.alt = 'Matching Image';
+                        img.style.width = '120px';
+                        img.style.borderRadius = '10px';
+                        getSignedUrl(item.image).then(url => { if (url) img.src = url; });
+                        div.appendChild(img);
+
+                    } else if (item.text) {
+                        const text = document.createElement('div');
+                        text.textContent = item.text;
+                        text.style.fontSize = '18px';
+                        div.appendChild(text);
+
+                    } else if (item.image) {
+                        const img = document.createElement('img');
+                        img.alt = 'Matching Image';
+                        img.style.width = '120px';
+                        img.style.borderRadius = '10px';
+                        getSignedUrl(item.image).then(url => { if (url) img.src = url; });
+                        div.appendChild(img);
+                    }
+
+                    return div;
+                };
+
+                if (first) matchContainer.appendChild(makeItemDiv(first));
+                if (second) matchContainer.appendChild(makeItemDiv(second));
             });
 
-            matchContainer.appendChild(left);
-            matchContainer.appendChild(right);
             div.appendChild(matchContainer);
-
             const fb = document.createElement('div');
             fb.className = 'feedback';
             div.appendChild(fb);
@@ -279,32 +334,47 @@ function validateMCQ(qIndex, chosenIndex, element) {
     document.getElementById('nextBtn').disabled = false;
 }
 
-// ----------------- Fill-in-Blanks -----------------
-function renderFillInBlanks(qIndex,q,container){
-    const blanksDiv=document.createElement('div'); blanksDiv.className='blanks-container';
-    const label = document.createElement('div');
-    label.textContent = "Drag your answer here in the blank:";
-    label.style.fontSize = "0.9em"; label.style.marginBottom = "6px";
-    blanksDiv.appendChild(label);
+    // ----------------- Fill-in-Blanks -----------------
+    function renderFillInBlanks(qIndex, q, container) {
+      const blanksDiv = document.createElement('div');
+      blanksDiv.className = 'blanks-container';
 
-    const blank = document.createElement('span');
-    blank.className = 'blank placeholder'; blank.textContent = "Drop here";
-    blank.dataset.correct = q.options[q.correct].text;
-    blank.ondragover = (ev) => ev.preventDefault();
-    blank.ondrop = (ev) => handleDrop(ev, blank, qIndex);
-    blanksDiv.appendChild(blank);
-    container.appendChild(blanksDiv);
+      const label = document.createElement('div');
+      label.textContent = "Drag your answer here in the blank:";
+      label.style.fontSize = "14.4px";
+      label.style.marginBottom = "6px";
+      blanksDiv.appendChild(label);
 
-    const optionsBank=document.createElement('div'); optionsBank.className='options-bank';
-    q.options.forEach(opt=>{
-        const div=document.createElement('div'); div.className='option'; div.textContent=opt.text;
-        div.draggable=true; div.ondragstart=(ev)=>ev.dataTransfer.setData('text', opt.text);
-        optionsBank.appendChild(div);
-    });
-    container.appendChild(optionsBank);
+      const blank = document.createElement('span');
+      blank.className = 'blank placeholder';
+      blank.textContent = "Drop here";
+      blank.dataset.correct = q.options[q.correct].text;
+      blank.ondragover = (ev) => ev.preventDefault();
+      blank.ondrop = (ev) => handleDrop(ev, blank, qIndex);
+      blanksDiv.appendChild(blank);
+      container.appendChild(blanksDiv);
 
-    const fb=document.createElement('div'); fb.className='feedback'; container.appendChild(fb);
-    document.getElementById('nextBtn').disabled=true;
+      const optionsBank = document.createElement('div');
+      optionsBank.className = 'options-bank';
+
+      const shuffledOptions = shuffleArray([...q.options]);
+
+      shuffledOptions.forEach(opt => {
+          const div = document.createElement('div');
+          div.className = 'option';
+          div.textContent = opt.text;
+          div.draggable = true;
+          div.ondragstart = (ev) => ev.dataTransfer.setData('text', opt.text);
+          optionsBank.appendChild(div);
+      });
+
+      container.appendChild(optionsBank);
+
+      const fb = document.createElement('div');
+      fb.className = 'feedback';
+      container.appendChild(fb);
+
+      document.getElementById('nextBtn').disabled = true;
 }
 
 // ----------------- Fill-in-blanks Validation (Single Click) -----------------
@@ -338,72 +408,90 @@ function handleDrop(ev, blank, qIndex) {
 
 
 // ----------------- Matching -----------------
-function handleMatchClick(itemEl,question){
-    if(itemEl.classList.contains('matched')) return;
-    if(!pendingLeft){ clearSelectedInQuestion(question); pendingLeft=itemEl; itemEl.classList.add('selected'); return; }
-    if(pendingLeft===itemEl){ pendingLeft.classList.remove('selected'); pendingLeft=null; return; }
-    const container=itemEl.parentElement.parentElement;
-    const leftColumn=container.querySelector('.match-list:first-child');
-    const rightColumn=container.querySelector('.match-list:last-child');
-    const clickedIsLeft=leftColumn.contains(itemEl);
-    const clickedIsRight=rightColumn.contains(itemEl);
-    const pendingIsLeft=leftColumn.contains(pendingLeft);
-    if(pendingIsLeft && clickedIsLeft){ pendingLeft.classList.remove('selected'); pendingLeft=itemEl; pendingLeft.classList.add('selected'); return; }
-    if(pendingIsLeft && clickedIsRight){ attemptMatch(pendingLeft,itemEl,question); return; }
-    if(!pendingIsLeft && clickedIsLeft){ attemptMatch(itemEl,pendingLeft,question); return; }
-    if(!pendingIsLeft && clickedIsRight){ pendingLeft.classList.remove('selected'); pendingLeft=itemEl; pendingLeft.classList.add('selected'); return; }
+function handleMatchClick(itemEl, question) {
+  if (itemEl.classList.contains('matched')) return;
+
+  if (!pendingLeft) {
+    clearSelectedInQuestion(question);
+    pendingLeft = itemEl;
+    itemEl.classList.add('selected');
+    return;
+  }
+
+  if (pendingLeft === itemEl) {
+    pendingLeft.classList.remove('selected');
+    pendingLeft = null;
+    return;
+  }
+
+  // Both items clicked
+  attemptMatch(pendingLeft, itemEl, question);
 }
 
-function attemptMatch(leftEl, rightEl, question) {
-  leftEl.classList.remove('selected');
-  const leftId = leftEl.dataset.id, rightId = rightEl.dataset.id;
-  const isMatch = question.options.some(opt =>
-    (opt.id === leftId && opt.matchId === rightId) ||
-    (opt.id === rightId && opt.matchId === leftId)
-  );
+  function attemptMatch(leftEl, rightEl, question) {
+    leftEl.classList.remove('selected');
 
-  const qContainer = leftEl.closest('.question');
-  const fb = qContainer ? qContainer.querySelector('.feedback') : null;
+    const leftId = leftEl.dataset.id;
+    const rightId = rightEl.dataset.id;
 
-  try {
-    // Draw line with visual feedback
-    const line = new LeaderLine(leftEl, rightEl, {
-      color: isMatch ? 'blue' : 'red',
-      size: 3,
-      path: 'straight',
-      startPlug: 'disc',
-      endPlug: 'disc',
-      dash: isMatch ? false : { animation: true }, // broken red line for wrong match
-    });
-    leaderLines.push(line);
-  } catch (e) {
-    console.warn('LeaderLine draw failed:', e);
-  }
+    const isMatch = question.options.some(opt =>
+      (opt.id === leftId && opt.matchId === rightId) ||
+      (opt.id === rightId && opt.matchId === leftId)
+    );
 
-  if (isMatch) {
-    leftEl.classList.add('matched');
-    rightEl.classList.add('matched');
-    question._matchedPairs = question._matchedPairs || {};
-    question._matchedPairs[leftId] = rightId;
+    const qContainer = leftEl.closest('.question');
+    const fb = qContainer ? qContainer.querySelector('.feedback') : null;
 
-    if (fb) {
-      fb.textContent = '✅ Correct pair!';
-      fb.style.color = 'green';
-    }
-  } else {
-    if (fb) {
-      fb.textContent = '❌ Incorrect match, try again.';
-      fb.style.color = 'red';
+    try {
+      const line = new LeaderLine(leftEl, rightEl, {
+        color: isMatch ? 'blue' : 'red',
+        size: 3,
+        path: 'straight',
+        startPlug: 'disc',
+        endPlug: 'disc',
+        dash: isMatch ? false : { animation: true },
+      });
+      leaderLines.push(line);
+    } catch (e) {
+      console.warn('LeaderLine draw failed:', e);
     }
 
-    setTimeout(() => {
-      const lastLine = leaderLines.pop();
-      if (lastLine) lastLine.remove();
-    }, 600);
-  }
+    if (isMatch) {
+      leftEl.classList.add('matched');
+      rightEl.classList.add('matched');
+
+      question._matchedPairs = question._matchedPairs || {};
+      question._matchedPairs[leftId] = rightId;
+
+      if (fb) {
+        fb.textContent = '✅ Correct pair!';
+        fb.style.color = 'green';
+      }
+    } else {
+      if (fb) {
+        fb.textContent = '❌ Incorrect match, try again.';
+        fb.style.color = 'red';
+      }
+
+      // Remove wrong line
+      setTimeout(() => {
+        const lastLine = leaderLines.pop();
+        if (lastLine) lastLine.remove();
+      }, 600);
+    }
+
 
   const totalPairs = question.options.length / 2;
-  const matchedCount = Object.keys(question._matchedPairs || {}).length;
+
+  // Count matched pairs
+  const matchedPairs = new Set();
+  if(question._matchedPairs){
+    Object.entries(question._matchedPairs).forEach(([leftId, rightId]) => {
+      matchedPairs.add(leftId);
+      matchedPairs.add(rightId);
+    });
+  }
+  const matchedCount = matchedPairs.size / 2; // because each pair has 2 items
 
   if (matchedCount >= totalPairs) {
     if (fb) {
@@ -417,7 +505,6 @@ function attemptMatch(leftEl, rightEl, question) {
 
   pendingLeft = null;
 }
-
 
 // ----------------- Utility -----------------
 function clearLeaderLines(){ if(leaderLines && leaderLines.length){ leaderLines.forEach(l=>{try{l.remove();}catch(e){}});} leaderLines=[]; }
@@ -550,71 +637,119 @@ async function showResult() {
     answers: answersToSave
   });
 
-// Retry Module
-document.getElementById('retryBtn').onclick = () => resetModule(false);
+  // Retry Module
+  document.getElementById('retryBtn').onclick = () => resetModule(false);
 
-// Exit Module
-document.getElementById('exitBtn').onclick = () => resetModule(true);
+  // Exit Module
+  document.getElementById('exitBtn').onclick = () => resetModule(true);
 
+  // View Summary toggle 
+  const summaryBtn = document.getElementById('summaryBtn');
+  const summaryDiv = document.getElementById('summaryContent');
 
-// View Summary toggle 
-const summaryBtn = document.getElementById('summaryBtn');
-const summaryDiv = document.getElementById('summaryContent');
+  summaryBtn.onclick = async () => {
+    if(summaryDiv.style.display === 'none') {
+      // Generate summary if hidden
+      summaryDiv.innerHTML = '';
 
-summaryBtn.onclick = () => {
-  if(summaryDiv.style.display === 'none') {
-    // Generate summary if hidden
-    summaryDiv.innerHTML = '';
-    answersToSave.forEach((a, i) => {
-      const div = document.createElement('div');
-      div.style.marginBottom = '15px';
-      let answerHTML = '';
+      for (let i = 0; i < answersToSave.length; i++) {
+        const a = answersToSave[i];
+        const div = document.createElement('div');
+        div.style.marginBottom = '15px';
+        let answerHTML = '';
 
-      if(a.type==='multiple_choice' || a.type==='fill_in_blanks') {
-        answerHTML = `<div>Your answer: ${a.selected || 'Not answered'}</div>
-                      <div>Correct answer: ${a.correct}</div>`;
+        // ---------------- Multiple Choice & Fill in the Blanks ----------------
+        if(a.type==='multiple_choice' || a.type==='fill_in_blanks') {
+          let yourAnswerText = a.selected || 'Not answered';
+          let correctAnswerText = a.correct;
+
+          // Include images dynamically
+          const q = questions[i];
+          const questionImage = q.image ? await getSignedUrl(q.image) : null;
+          const correctOptionImage = (q.type==='multiple_choice' && q.options[q.correct].image) 
+                                    ? await getSignedUrl(q.options[q.correct].image) 
+                                    : null;
+          const selectedOption = (q.type==='multiple_choice' && a.selected) 
+                                ? q.options.find(opt => opt.text === a.selected) 
+                                : null;
+          const selectedOptionImage = (selectedOption && selectedOption.image) 
+                                      ? await getSignedUrl(selectedOption.image) 
+                                      : null;
+
+          answerHTML = `<div><strong>Your answer:</strong> ${yourAnswerText}`;
+          if(selectedOptionImage) answerHTML += `<br><img src="${selectedOptionImage}" style="max-width:100px; display:block; margin-top:3px;">`;
+          answerHTML += `</div>`;
+
+          answerHTML += `<div><strong>Correct answer:</strong> ${correctAnswerText}`;
+          if(correctOptionImage) answerHTML += `<br><img src="${correctOptionImage}" style="max-width:100px; display:block; margin-top:3px;">`;
+          answerHTML += `</div>`;
+
+          // Include question image if exists
+          if(questionImage) {
+            answerHTML = `<div><strong>Question:</strong><br><img src="${questionImage}" style="max-width:150px; display:block; margin-bottom:5px;"></div>` + answerHTML;
+          }
+        }
+
+        // ---------------- Matching Type ----------------
+        if(a.type==='connecting_dots') {
+          const yourPairs = await Promise.all(Object.keys(a.selected||{}).map(async leftId => {
+            const rightId = a.selected[leftId];
+            const leftItem = questions[i].options.find(opt => opt.id===leftId);
+            const rightItem = questions[i].options.find(opt => opt.id===rightId);
+            if(!leftItem || !rightItem) return '';
+            
+            let text = `${leftItem.text} - ${rightItem.text}`;
+
+            if(leftItem.image) {
+              const url = await getSignedUrl(leftItem.image);
+              if(url) text += `<br><img src="${url}" style="max-width:100px; display:block; margin-top:3px;">`;
+            }
+            if(rightItem.image) {
+              const url = await getSignedUrl(rightItem.image);
+              if(url) text += `<br><img src="${url}" style="max-width:100px; display:block; margin-top:3px;">`;
+            }
+
+            return text;
+          }));
+
+          const correctPairs = await Promise.all(
+            a.correct.filter((_, idx)=>idx%2===0).map(async leftOpt => {
+              const leftItem = questions[i].options.find(o => o.id===leftOpt.id);
+              const rightItem = questions[i].options.find(o => o.id===leftOpt.matchId);
+              if(!leftItem||!rightItem) return '';
+
+              let text = `${leftItem.text} - ${rightItem.text}`;
+              if(leftItem.image) {
+                const url = await getSignedUrl(leftItem.image);
+                if(url) text += `<br><img src="${url}" style="max-width:100px; display:block; margin-top:3px;">`;
+              }
+              if(rightItem.image) {
+                const url = await getSignedUrl(rightItem.image);
+                if(url) text += `<br><img src="${url}" style="max-width:100px; display:block; margin-top:3px;">`;
+              }
+              return text;
+            })
+          );
+
+          answerHTML = `<div><strong>Your pairs:</strong><br>${yourPairs.join('<br>') || 'Not answered'}</div>
+                        <div><strong>Correct pairs:</strong><br>${correctPairs.join('<br>')}</div>`;
+        }
+
+        div.innerHTML = `<strong>${a.question}</strong><br>${answerHTML}`;
+        summaryDiv.appendChild(div);
       }
 
-      if(a.type==='connecting_dots') {
-        const yourPairs = Object.keys(a.selected||{}).map(leftId => {
-          const rightId = a.selected[leftId];
-          const leftItem = questions[i].options.find(opt => opt.id===leftId);
-          const rightItem = questions[i].options.find(opt => opt.id===rightId);
-          if(!leftItem||!rightItem) return '';
-          let text = `${leftItem.text} - ${rightItem.text}`;
-          if(rightItem.image) text += `<br><img src="https://aliyyqinorqlwmjhbqza.supabase.co/storage/v1/object/public/${rightItem.image}" style="max-width:100px; display:block; margin-top:3px;">`;
-          return text;
-        }).join('<br>');
+      summaryDiv.style.display = 'block';
+      summaryBtn.textContent = 'Back';
+      summaryDiv.scrollIntoView({ behavior: 'smooth' });
 
-        const correctPairs = [];
-        const leftItems = a.correct.filter((_, idx)=>idx%2===0);
-        leftItems.forEach(leftOpt => {
-          const leftItem = questions[i].options.find(o => o.id===leftOpt.id);
-          const rightItem = questions[i].options.find(o => o.id===leftOpt.matchId);
-          if(!leftItem||!rightItem) return;
-          let text = `${leftItem.text} - ${rightItem.text}`;
-          if(rightItem.image) text += `<br><img src="https://aliyyqinorqlwmjhbqza.supabase.co/storage/v1/object/public/${rightItem.image}" style="max-width:100px; display:block; margin-top:3px;">`;
-          correctPairs.push(text);
-        });
+    } else {
+      // Hide summary
+      summaryDiv.style.display = 'none';
+      summaryBtn.textContent = 'View Summary';
+    }
+  };
 
-        answerHTML = `<div><strong>Your pairs:</strong><br>${yourPairs || 'Not answered'}</div>
-                      <div><strong>Correct pairs:</strong><br>${correctPairs.join('<br>')}</div>`;
-      }
-
-      div.innerHTML = `<strong>${a.question}</strong><br>${answerHTML}`;
-      summaryDiv.appendChild(div);
-    });
-
-    summaryDiv.style.display = 'block';
-    summaryBtn.textContent = 'Back';
-    summaryDiv.scrollIntoView({ behavior: 'smooth' });
-
-  } else {
-    // Hide summary
-    summaryDiv.style.display = 'none';
-    summaryBtn.textContent = 'View Summary';
-  }
-};
 }
 
 // ----------------- Save Attempt -----------------
@@ -638,3 +773,6 @@ async function saveAttempt(moduleId, attemptData){
 window.loadModule = loadModule;
 window.nextQuestion = nextQuestion;
 window.submitStudentInfo = submitStudentInfo;
+window.showQuestion = showQuestion;
+window.renderFillInBlanks = renderFillInBlanks;
+

@@ -145,7 +145,7 @@ button:disabled {
     display: inline-block;
     min-width: 120px;
     padding: 6px;
-    border: 2px dashed #999; /* visual placeholder */
+    border: 2px dashed #999; 
     border-radius: 6px;
     text-align: center;
     background: #f9f9f9;
