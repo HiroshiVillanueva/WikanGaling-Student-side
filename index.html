@@ -6,7 +6,6 @@
 <link rel="stylesheet" href="student_css.css">
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
-<script src="student_js.js"></script>
 </head>
 <body>
 
@@ -58,11 +57,30 @@
   <div id="summaryContent" style="margin-top:20px; display:none;"></div>
 </div>
 
-<script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone@7.22.5/babel.min.js"></script>
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<!-- ----------------- JS Files at Bottom ----------------- -->
+<script src="student_js.js"></script>
+<script>
+  // ----------------- Start Module Button Hookup -----------------
+  const startBtn = document.getElementById('startModuleBtn');
+  if (startBtn) {
+      startBtn.onclick = () => {
+          // Reset answers
+          questions.forEach(q => {
+              if (q.type === 'multiple_choice') q._answeredIndex = null;
+              if (q.type === 'fill_in_blanks') q._answeredText = null;
+              if (q.type === 'connecting_dots') q._matchedPairs = {};
+          });
 
+          // Hide module landing, show module container
+          document.getElementById('moduleLanding').style.display = 'none';
+          document.getElementById('moduleContainer').style.display = 'block';
+
+          currentIndex = 0;
+          renderQuestions();
+          showQuestion(currentIndex);
+      };
+  }
+</script>
 
 </body>
 </html>
