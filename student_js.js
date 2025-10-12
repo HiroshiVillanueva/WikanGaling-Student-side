@@ -3,7 +3,6 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const SUPABASE_BUCKET_URL = "https://aliyyqinorqlwmjhbqza.supabase.co/storage/v1/object/public/";
 
-//const MODULE_ID = "51eea546-24a5-46c2-87f4-493d71ae8030"; // sample module id -- later to be replaced with generated url
 
 // ----------------- Helper for Signed URLs -----------------
 async function getSignedUrl(path) {
@@ -35,18 +34,71 @@ window.onload = function() {
 };
 
 
+let leaderLines = [];
 let questions = [];
 let currentIndex = 0;
-let leaderLines = [];
 let pendingLeft = null;
 
 let STUDENT_ID = sessionStorage.getItem('student_id');
 
+function showCustomAlert(title, message) {
+    const alertBox = document.getElementById('customAlert');
+    alertBox.querySelector('.custom-alert-header').textContent = title;
+    alertBox.querySelector('.custom-alert-body').textContent = message;
+    alertBox.style.display = 'block';
+}
+
+function closeCustomAlert() {
+    document.getElementById('customAlert').style.display = 'none';
+}
+
+// ----------------- Background Music Setup -----------------
+const bgMusic = document.getElementById('bgMusic');
+bgMusic.volume = 0.2; // adjust volume (0 to 1)
+
+const soundCorrect = document.getElementById('soundCorrect');
+const soundWrong = document.getElementById('soundWrong');
+const soundComplete = document.getElementById('soundComplete');
+
+// ----------------- Load Module -----------------
+async function loadModule() {
+
+  bgMusic.play().catch(err => console.warn("bgMusic play failed:", err));
+
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('moduleContainer').style.display = 'none';
+  document.getElementById('resultContainer').style.display = 'none';
+
+  document.getElementById('moduleLanding').style.display = 'block';
+
+  const { data, error } = await supabase
+    .from("module")
+    .select("title, description, form_data, teacher_id")
+    .eq("module_id", MODULE_ID)
+    .single();
+
+  if (error || !data) {
+    alert("Failed to load module.");
+    console.error(error);
+    return;
+  }
+
+  document.getElementById('moduleLandingTitle').textContent = data.title || 'Untitled Module';
+  document.getElementById('moduleLandingDesc').textContent = data.description || '';
+
+  document.getElementById('moduleTitle').textContent = data.title || 'Untitled Module';
+
+  const moduleData = data.form_data;
+  questions = moduleData.questions || [];
+}
+
 // ----------------- Submit Student Information -----------------
 async function submitStudentInfo() {
     const fullName = document.getElementById('studentName').value.trim();
-    if (!fullName) { alert("Enter your name"); return; }
-
+    if (!fullName) { 
+        showCustomAlert("⚠️ Input Required", "Please enter your name before continuing.");
+        return; 
+    }
     const firstName = fullName.split(' ')[0];
 
     try {
@@ -98,36 +150,6 @@ async function submitStudentInfo() {
     }
 }
 
-// ----------------- Load Module -----------------
-async function loadModule() {
-
-  document.getElementById('landing').style.display = 'none';
-  document.getElementById('moduleContainer').style.display = 'none';
-  document.getElementById('resultContainer').style.display = 'none';
-
-  document.getElementById('moduleLanding').style.display = 'block';
-
-  const { data, error } = await supabase
-    .from("module")
-    .select("title, description, form_data, teacher_id")
-    .eq("module_id", MODULE_ID)
-    .single();
-
-  if (error || !data) {
-    alert("Failed to load module.");
-    console.error(error);
-    return;
-  }
-
-  document.getElementById('moduleLandingTitle').textContent = data.title || 'Untitled Module';
-  document.getElementById('moduleLandingDesc').textContent = data.description || '';
-
-  document.getElementById('moduleTitle').textContent = data.title || 'Untitled Module';
-
-  const moduleData = data.form_data;
-  questions = moduleData.questions || [];
-
-}
 // ----------------- Start Module Button Handler -----------------
 document.getElementById('startModuleBtn').onclick = () => {
   // Reset answers
@@ -136,10 +158,8 @@ document.getElementById('startModuleBtn').onclick = () => {
     if (q.type === 'fill_in_blanks') q._answeredText = null;
     if (q.type === 'connecting_dots') q._matchedPairs = {};
   });
-
-  document.getElementById('moduleTitle').textContent =
-      document.getElementById('moduleLandingTitle').textContent || 'Untitled Module';
-
+  
+  document.getElementById('moduleLandingTitle').textContent || 'Untitled Module';
   document.getElementById('moduleLanding').style.display = 'none';
   document.getElementById('moduleContainer').style.display = 'block';
 
@@ -243,227 +263,218 @@ function renderQuestions() {
             renderFillInBlanks(index, q, div);
         }
 
-        // ---------------- Matching Type ----------------
         if (q.type === 'connecting_dots') {
-          // Ensure options exist and each has an id
-          q.options = q.options || [];
-          q.options.forEach(opt => { if (!opt.id) opt.id = crypto.randomUUID(); });
+            q.options = q.options || [];
+            q.options.forEach(opt => { if (!opt.id) opt.id = crypto.randomUUID(); });
 
-          const matchContainer = document.createElement('div');
-          matchContainer.className = 'match-container';
-          matchContainer.style.display = 'flex';
-          matchContainer.style.justifyContent = 'center';
-          matchContainer.style.alignItems = 'flex-start';
-          matchContainer.style.gap = '100px';
-          matchContainer.style.marginTop = '40px';
+            const matchContainer = document.createElement('div');
+            matchContainer.className = 'match-container';
+            matchContainer.style.display = 'flex';
+            matchContainer.style.justifyContent = 'center';
+            matchContainer.style.gap = '100px';
+            matchContainer.style.marginTop = '40px';
+            matchContainer.style.overflowX = 'auto';
 
-          // Columns
-          const leftCol = document.createElement('div');
-          const rightCol = document.createElement('div');
-          leftCol.className = 'match-col left-col';
-          rightCol.className = 'match-col right-col';
-          leftCol.style.display = rightCol.style.display = 'flex';
-          leftCol.style.flexDirection = rightCol.style.flexDirection = 'column';
-          leftCol.style.gap = rightCol.style.gap = '25px';
-          leftCol.style.alignItems = rightCol.style.alignItems = 'center';
+            const leftCol = document.createElement('div');
+            const rightCol = document.createElement('div');
+            leftCol.className = 'match-col left-col';
+            rightCol.className = 'match-col right-col';
+            leftCol.style.display = rightCol.style.display = 'flex';
+            leftCol.style.flexDirection = rightCol.style.flexDirection = 'column';
+            leftCol.style.gap = rightCol.style.gap = '25px';
+            leftCol.style.alignItems = rightCol.style.alignItems = 'center';
 
-          // Maps
-          const mapById = {};
-          q.options.forEach(o => mapById[o.id] = o);
+            // Map options by id
+            const mapById = {};
+            q.options.forEach(o => mapById[o.id] = o);
 
-          const pairedIds = new Set();
-          const pairs = [];
-
-          // group by matchId value
-          const groups = {};
-          q.options.forEach(o => {
-            const key = o.matchId ?? '__no__';
-            if (!groups[key]) groups[key] = [];
-            groups[key].push(o);
-          });
-          Object.values(groups).forEach(grp => {
-            if (grp.length >= 2) {
-              for (let i = 0; i + 1 < grp.length; i += 2) {
-                const a = grp[i], b = grp[i + 1];
-                if (!pairedIds.has(a.id) && !pairedIds.has(b.id)) {
-                  pairs.push({ leftId: a.id, rightId: b.id });
-                  pairedIds.add(a.id); pairedIds.add(b.id);
+            // Build unique pairs set
+            const pairSet = new Set();
+            const pairs = [];
+            q.options.forEach(o => {
+                if (o.matchId) {
+                    const key = [o.id, o.matchId].sort().join('_'); // unique key regardless of order
+                    if (!pairSet.has(key)) {
+                        pairs.push({ leftId: o.id, rightId: o.matchId });
+                        pairSet.add(key);
+                    }
+                } else {
+                    pairs.push({ leftId: o.id, rightId: null });
                 }
-              }
-            }
-          });
+            });
 
-          // matchId points to partner id
-          q.options.forEach(o => {
-            if (pairedIds.has(o.id)) return;
-            const target = mapById[o.matchId];
-            if (target && !pairedIds.has(target.id)) {
-              pairs.push({ leftId: o.id, rightId: target.id });
-              pairedIds.add(o.id); pairedIds.add(target.id);
-            }
-          });
+            q.correctPairs = pairs.map(p => ({ leftId: p.leftId, rightId: p.rightId }));
 
-          // leftover -> pair by index
-          const leftovers = q.options.filter(o => !pairedIds.has(o.id));
-          for (let i = 0; i + 1 < leftovers.length; i += 2) {
-            pairs.push({ leftId: leftovers[i].id, rightId: leftovers[i + 1].id });
-            pairedIds.add(leftovers[i].id); pairedIds.add(leftovers[i + 1].id);
-          }
-          // If an odd leftover remains, pair with a placeholder (rightId null)
-          if (leftovers.length % 2 === 1) {
-            const last = leftovers[leftovers.length - 1];
-            if (!pairedIds.has(last.id)) {
-              pairs.push({ leftId: last.id, rightId: null });
-              pairedIds.add(last.id);
-            }
-          }
+            const makeItemDiv = (item, side) => {
+                const div = document.createElement('div');
+                div.className = `match-item ${side}`;
+                div.style.display = 'flex';
+                div.style.flexDirection = 'column';
+                div.style.alignItems = 'center';
+                div.style.justifyContent = 'center';
+                div.style.background = '#f8f8f8';
+                div.style.borderRadius = '10px';
+                div.style.padding = '15px';
+                div.style.minWidth = '150px';
+                div.style.height = '120px';
+                div.style.cursor = item ? 'pointer' : 'default';
 
-          // persist correctPairs used for scoring
-          q.correctPairs = pairs.map(p => ({ leftId: p.leftId, rightId: p.rightId }));
+                if (!item) {
+                    const ph = document.createElement('div');
+                    ph.style.opacity = '0.35';
+                    ph.textContent = '—';
+                    div.appendChild(ph);
+                    return div;
+                }
 
-          // Build left/right item lists from pairs
-          const leftItems = pairs.map(p => mapById[p.leftId]).filter(Boolean);
-          const rightItems = pairs.map(p => p.rightId ? mapById[p.rightId] : null);
+                div.dataset.id = item.id;
+                div.dataset.matchId = item.matchId || '';
+                div.dataset.side = side;
 
-          // Helper to create item element incase item is null
-          const makeItemDiv = (item, side) => {
-            const div = document.createElement('div');
-            div.className = `match-item ${side}`;
-            div.style.display = 'flex';
-            div.style.flexDirection = 'column';
-            div.style.alignItems = 'center';
-            div.style.justifyContent = 'center';
-            div.style.background = '#f8f8f8';
-            div.style.borderRadius = '10px';
-            div.style.padding = '15px';
-            div.style.minWidth = '150px';
-            div.style.height = '120px';
-            div.style.cursor = item ? 'pointer' : 'default';
+                if (item.text) {
+                    const text = document.createElement('div');
+                    text.textContent = item.text;
+                    text.style.fontSize = '16px';
+                    text.style.fontWeight = '500';
+                    text.style.textAlign = 'center';
+                    div.appendChild(text);
+                }
 
-            if (!item) {
-              // placeholder box to keep alignment when odd number
-              const ph = document.createElement('div');
-              ph.style.opacity = '0.35';
-              ph.textContent = '—';
-              div.appendChild(ph);
-              return div;
-            }
+                if (item.image) {
+                    const img = document.createElement('img');
+                    img.alt = 'Matching Image';
+                    img.style.width = '100px';
+                    img.style.borderRadius = '8px';
+                    img.style.marginTop = '6px';
+                    getSignedUrl(item.image).then(url => { if (url) img.src = url; });
+                    div.appendChild(img);
+                }
 
-            div.dataset.id = item.id;
-            div.dataset.matchId = item.matchId || '';
-            div.dataset.side = side;
+                div.onclick = () => handleMatchClick(div, q);
+                return div;
+            };
 
-            if (item.text) {
-              const text = document.createElement('div');
-              text.textContent = item.text;
-              text.style.fontSize = '16px';
-              text.style.fontWeight = '500';
-              text.style.textAlign = 'center';
-              div.appendChild(text);
-            }
-            if (item.image) {
-              const img = document.createElement('img');
-              img.alt = 'Matching Image';
-              img.style.width = '100px';
-              img.style.borderRadius = '8px';
-              img.style.marginTop = '6px';
-              getSignedUrl(item.image).then(url => { if (url) img.src = url; });
-              div.appendChild(img);
-            }
+            pairs.forEach(p => {
+                const leftDiv = makeItemDiv(mapById[p.leftId], 'left');
+                const rightDiv = makeItemDiv(p.rightId ? mapById[p.rightId] : null, 'right');
+                leftCol.appendChild(leftDiv);
+                rightCol.appendChild(rightDiv);
+            });
 
-            div.onclick = () => handleMatchClick(div, q);
-            return div;
-          };
+            matchContainer.appendChild(leftCol);
+            matchContainer.appendChild(rightCol);
+            div.appendChild(matchContainer);
 
-          // Append items preserving pair order (left/right columns align)
-          leftItems.forEach(item => leftCol.appendChild(makeItemDiv(item, 'left')));
-          rightItems.forEach(item => rightCol.appendChild(makeItemDiv(item, 'right')));
-
-          matchContainer.appendChild(leftCol);
-          matchContainer.appendChild(rightCol);
-          div.appendChild(matchContainer);
-
-          const fb = document.createElement('div');
-          fb.className = 'feedback';
-          fb.style.marginTop = '12px';
-          div.appendChild(fb);
+            const fb = document.createElement('div');
+            fb.className = 'feedback';
+            fb.style.marginTop = '12px';
+            div.appendChild(fb);
         }
+
         container.appendChild(div);
     });
 }
 
 // ----------------- Multiple Choice -----------------
     function validateMCQ(qIndex, chosenId, element) {
-      const q = questions[qIndex];
-      if (!q) return;
+    const q = questions[qIndex];
+    if (!q) return;
 
-      // prevent double answering
-      if (q._answered) return;
-      q._answered = true;
-      q._chosenId = chosenId; // store chosen option id for summary/save
+    // prevent double answering
+    if (q._answered) return;
+    q._answered = true;
+    q._chosenId = chosenId; // store chosen option id for summary/save
 
-      const feedback = document.querySelector(`#q${qIndex} .feedback`);
-      document.querySelectorAll(`#q${qIndex} .option`).forEach(o => o.classList.remove('correct', 'wrong', 'selected'));
-      element.classList.add('selected');
+    const feedback = document.querySelector(`#q${qIndex} .feedback`);
+    const allOptions = document.querySelectorAll(`#q${qIndex} .option`);
+    allOptions.forEach(o => o.classList.remove('correct', 'wrong', 'selected'));
+    element.classList.add('selected');
 
-      // compute correctId (use precomputed q.correctId if available)
-      const correctId = q.correctId || (
-        Array.isArray(q.options) && typeof q.correct === 'number' && q.options[q.correct]
-          ? q.options[q.correct].id
-          : null
-      );
+    // determine correctId
+    if (typeof q.correct === 'number') {
+        q.correctId = q.options[q.correct] ? q.options[q.correct].id : null;
+    } else if (typeof q.correct === 'string') {
+        q.correctId = q.correct;
+    } else {
+        q.correctId = null;
+    }
 
-      if (correctId && chosenId === correctId) {
+    // highlight selected option
+    if (chosenId === q.correctId) {
         element.classList.add('correct');
-        if (feedback) { feedback.textContent = '✅ Correct!'; feedback.style.color = 'green'; }
+        if (feedback) { feedback.textContent = '✅ Tama ang sagot mo!'; feedback.style.color = 'green'; }
         q._isCorrect = true;
-      } else {
+        if (window.soundCorrect) soundCorrect.play();
+    } else {
         element.classList.add('wrong');
-        if (feedback) { feedback.textContent = '❌ Incorrect.'; feedback.style.color = 'red'; }
+        if (feedback) { feedback.textContent = '❌ Mali ang sagot mo!'; feedback.style.color = 'red'; }
         q._isCorrect = false;
+        if (window.soundWrong) soundWrong.play();
 
-        // highlight the correct option visually 
-        if (correctId) {
-          const correctBtn = document.querySelector(`#q${qIndex} .option[data-optid="${correctId}"]`);
-          if (correctBtn) correctBtn.classList.add('correct');
+        // highlight the correct option even if wrong
+        if (q.correctId) {
+            const correctBtn = document.querySelector(`#q${qIndex} .option[data-optid="${q.correctId}"]`);
+            if (correctBtn) correctBtn.classList.add('correct');
         }
-      }
+    }
 
-      document.getElementById('nextBtn').disabled = false;
-      }
+    // enable next button after selecting
+    document.getElementById('nextBtn').disabled = false;
+}
 
 
-    // ----------------- Fill-in-Blanks -----------------
+
+    // ----------------- Fill-in-Blanks ----------------
     function renderFillInBlanks(qIndex, q, container) {
       const blanksDiv = document.createElement('div');
       blanksDiv.className = 'blanks-container';
 
       const label = document.createElement('div');
-      label.textContent = "Drag your answer here in the blank:";
+      label.textContent = "I-drag ang sagot mo dito sa patlang:";
       label.style.fontSize = "14.4px";
       label.style.marginBottom = "6px";
       blanksDiv.appendChild(label);
 
+      // ensure answeredBlanks exists on question
+      q._answeredBlanks = q._answeredBlanks || {};
+
+      // create a single blank element (if you want >1 blanks per question adapt this)
       const blank = document.createElement('span');
       blank.className = 'blank placeholder';
-      blank.textContent = "Drop here";
-      blank.dataset.correct = q.options[q.correct].text;
+      blank.textContent = "Ihulog Dito";
+
+      // create a stable id for this blank
+      blank.dataset.id = `q${qIndex}_blank0`;
+
+      // store correct answer text on dataset (normalize)
+      blank.dataset.correct = (q.options && q.options[q.correct] && q.options[q.correct].text) ? q.options[q.correct].text : '';
+
       blank.ondragover = (ev) => ev.preventDefault();
       blank.ondrop = (ev) => handleDrop(ev, blank, qIndex);
       blanksDiv.appendChild(blank);
       container.appendChild(blanksDiv);
 
+      // Options bank
       const optionsBank = document.createElement('div');
       optionsBank.className = 'options-bank';
 
-      const shuffledOptions = shuffleArray([...q.options]);
+      const shuffledOptions = shuffleArray([...q.options || []]);
 
       shuffledOptions.forEach(opt => {
           const div = document.createElement('div');
           div.className = 'option';
           div.textContent = opt.text;
           div.draggable = true;
-          div.ondragstart = (ev) => ev.dataTransfer.setData('text', opt.text);
+          // store an id in the dataTransfer so we can track which option exactly
+          div.ondragstart = (ev) => {
+              try {
+                  ev.dataTransfer.setData('text/plain', opt.text);
+                  ev.dataTransfer.setData('application/option-id', opt.id || opt.text);
+              } catch (e) {
+                  // fallback
+                  ev.dataTransfer.setData('text', opt.text);
+              }
+          };
           optionsBank.appendChild(div);
       });
 
@@ -473,47 +484,102 @@ function renderQuestions() {
       fb.className = 'feedback';
       container.appendChild(fb);
 
-      document.getElementById('nextBtn').disabled = true;
-}
+      // If there's already an answered value for this blank, populate it
+      const existing = q._answeredBlanks[blank.dataset.id];
+      if (existing) {
+          blank.textContent = existing;
+          blank.classList.add('filled');
+          blank.style.pointerEvents = 'none';
+          // apply visual correctness if matches
+          const correctAnswer = (blank.dataset.correct || '').trim().toLowerCase();
+          if (existing.trim().toLowerCase() === correctAnswer) {
+              fb.textContent = '✅ Tama ang sagot mo!';
+              fb.style.color = 'green';
+              blank.style.backgroundColor = 'lightgreen';
+              blank.style.border = '2px solid green';
+          } else {
+              fb.textContent = '❌ Mali ang sagot mo!';
+              fb.style.color = 'red';
+              blank.style.backgroundColor = 'lightcoral';
+              blank.style.border = '2px solid red';
+              const correctSpan = document.createElement('span');
+              correctSpan.textContent = ` (${blank.dataset.correct})`;
+              correctSpan.style.color = 'green';
+              correctSpan.style.marginLeft = '6px';
+              blank.insertAdjacentElement('afterend', correctSpan);
+          }
+      }
 
-// ----------------- Fill-in-blanks Validation (Single Click) -----------------
-function handleDrop(ev, blank, qIndex) {
+      // Set initial next button state for this question
+      const totalBlanks = container.querySelectorAll('.blank').length;
+      const answeredCount = Object.keys(q._answeredBlanks).length;
+      document.getElementById('nextBtn').disabled = answeredCount < totalBlanks;
+    }
+
+  function handleDrop(ev, blank, qIndex) {
     ev.preventDefault();
     const q = questions[qIndex];
+    if (!q) return;
 
-    // Prevent re-answering
-    if (q._answeredText !== null && q._answeredText !== undefined) return;
+    // try to prefer option-id if provided, but fallback to text
+    let dataText = '';
+    try {
+        dataText = ev.dataTransfer.getData('text/plain').trim() || ev.dataTransfer.getData('text').trim();
+    } catch (e) {
+        dataText = ev.dataTransfer.getData('text').trim();
+    }
+    if (!dataText) return;
 
-    const data = ev.dataTransfer.getData('text').trim();
-    blank.textContent = data;
+    // Mark this blank as filled
+    blank.textContent = dataText;
     blank.classList.add('filled');
+    blank.style.pointerEvents = 'none';
 
-    q._answeredText = data;
+    // Ensure q._answeredBlanks exists and use blank.dataset.id as key
+    q._answeredBlanks = q._answeredBlanks || {};
+    q._answeredBlanks[blank.dataset.id] = dataText;
 
-    const correctAnswer = blank.dataset.correct.trim().toLowerCase();
+    const correctAnswer = (blank.dataset.correct || '').trim().toLowerCase();
     const fb = document.querySelector(`#q${qIndex} .feedback`);
 
-    if (data.toLowerCase() === correctAnswer) {
-        fb.textContent = '✅ Correct!';
-        fb.style.color = 'green';
+    // clear any previous helper correctSpan next to blank
+    const nextSibling = blank.nextElementSibling;
+    if (nextSibling && nextSibling.tagName === 'SPAN') nextSibling.remove();
+
+    if (dataText.toLowerCase() === correctAnswer) {
+        if (fb) { fb.textContent = '✅ Tama ang sagot mo!'; fb.style.color = 'green'; }
         blank.style.backgroundColor = 'lightgreen';
         blank.style.border = '2px solid green';
+        try { if (window.soundCorrect) soundCorrect.play(); } catch(e) {}
     } else {
-        fb.textContent = '❌ Incorrect.';
-        fb.style.color = 'red';
+        if (fb) { fb.textContent = '❌ Mali ang sagot mo!'; fb.style.color = 'red'; }
         blank.style.backgroundColor = 'lightcoral';
         blank.style.border = '2px solid red';
-
         const correctSpan = document.createElement('span');
         correctSpan.textContent = ` (${blank.dataset.correct})`;
         correctSpan.style.color = 'green';
         correctSpan.style.marginLeft = '6px';
         blank.insertAdjacentElement('afterend', correctSpan);
+        try { if (window.soundWrong) soundWrong.play(); } catch(e) {}
     }
 
-    document.getElementById('nextBtn').disabled = false;
-    blank.style.pointerEvents = 'none';
+    // Update answered status on question
+    const totalBlanks = document.querySelectorAll(`#q${qIndex} .blank`).length;
+    const answeredCount = Object.keys(q._answeredBlanks).length;
+
+    // mark question as answered if all blanks filled
+    if (answeredCount === totalBlanks) {
+        q._answered = true;
+        q._answeredText = Object.values(q._answeredBlanks).join(', ');
+    }
+
+    // Update Next button for the currently visible question only
+    const visibleQIndex = currentIndex;
+    if (visibleQIndex === qIndex) {
+        document.getElementById('nextBtn').disabled = answeredCount < totalBlanks;
+    }
 }
+
 
 // ----------------- Matching click handler -----------------
 function handleMatchClick(itemEl, question) {
@@ -598,39 +664,55 @@ function attemptMatch(leftEl, rightEl, question) {
     question._matchedPairs[leftId] = rightId;
 
     const fb = leftEl.closest('.question').querySelector('.feedback');
-    if (fb) { fb.textContent = '✅ Correct pair!'; fb.style.color = 'green'; }
+    if (fb) { 
+      fb.textContent = '✅ Tamang pares!'; fb.style.color = 'green'; 
+      if (window.soundCorrect) soundCorrect.play();
+    }
   } else {
     const fb = leftEl.closest('.question').querySelector('.feedback');
-    if (fb) { fb.textContent = '❌ Not a match'; fb.style.color = 'red'; }
+    if (fb) { 
+      fb.textContent = '❌ Hindi tugma'; fb.style.color = 'red'; 
+      if (window.soundWrong) soundWrong.play();
+    }
     // do NOT save wrong pair (so students can try again)
   }
 
   updateMatchingProgress(question);
 }
 
-// ----------------- Draw leaderline -----------------
 function drawLeaderLine(el1, el2, isCorrect) {
-  try {
-    const line = new LeaderLine(el1, el2, {
-      color: isCorrect ? 'blue' : 'red',
-      size: 3,
-      path: 'straight',
-      startPlug: 'disc',
-      endPlug: 'disc',
-      dash: isCorrect ? false : { animation: true },
-    });
+  if (!el1 || !el2) return;
 
-    leaderLines.push(line);
-
-    if (!isCorrect) {
-      setTimeout(() => {
-        line.remove();
-      }, 1500); // 2 seconds delay
-    }
-
-  } catch (e) {
-    console.warn('LeaderLine draw failed:', e);
+  if (typeof LeaderLine === 'undefined') {
+    console.error("LeaderLine library not loaded!");
+    return;
   }
+  const container = document.getElementById('moduleContainer'); // full module container
+  const matchContainer = el1.closest('.match-container') || document.body; // full match container
+
+  const line = new LeaderLine(el1, el2, {
+    color: isCorrect ? 'blue' : 'red',
+    size: 3,
+    path: 'straight',
+    startPlug: 'disc',
+    endPlug: 'disc',
+    dash: isCorrect ? false : { animation: true },
+    container: container,      // attach to the full module container
+    startSocket: 'middle',
+    endSocket: 'middle'
+  });
+
+  leaderLines.push(line);
+
+  if (!isCorrect) {
+    setTimeout(() => {
+      try { line.remove(); } catch (e) {}
+    }, 1500);
+  }
+
+  container.addEventListener('scroll', () => line.position());
+  matchContainer.addEventListener('scroll', () => line.position());
+  window.addEventListener('resize', () => line.position());
 }
 
 
@@ -644,270 +726,515 @@ function updateMatchingProgress(question) {
   const totalPairs = correctPairs.length;
 
   if (totalPairs > 0 && matchedCorrectCount === totalPairs) {
-    if (fb) { fb.textContent = '✅ All pairs matched!'; fb.style.color = 'green'; }
+    if (fb) { 
+      fb.textContent = '✅ Tama lahat ng pares!'; fb.style.color = 'green'; 
+      if (window.soundCorrect) soundCorrect.play();
+    }
     document.getElementById('nextBtn').disabled = false;
   } else {
-    if (fb && matchedCorrectCount > 0) { fb.textContent = `${matchedCorrectCount} / ${totalPairs} correct`; fb.style.color = 'black'; }
+    if (fb && matchedCorrectCount > 0) { 
+      fb.textContent = `${matchedCorrectCount} / ${totalPairs} tama`; fb.style.color = 'black'; 
+      if (window.soundCorrect) soundCorrect.play();
+    }
     document.getElementById('nextBtn').disabled = true;
   }
 }
 
 
 // ----------------- Utility -----------------
-function clearLeaderLines(){ if(leaderLines && leaderLines.length){ leaderLines.forEach(l=>{try{l.remove();}catch(e){}});} leaderLines=[]; }
+function clearLeaderLines(){ if(leaderLines && leaderLines.length){ leaderLines.forEach(l=>{try{l.remove();}catch(e){}});} leaderLines = []; }
 function clearSelectedInQuestion(question){ const container=document.getElementById('q'+questions.indexOf(question)); if(!container)return; container.querySelectorAll('.match-item.selected').forEach(el=>el.classList.remove('selected')); }
 
 // ----------------- Navigation -----------------
 function showQuestion(index){
     clearLeaderLines();
     document.querySelectorAll('.question').forEach(q=>q.classList.remove('active'));
-    const el=document.getElementById('q'+index);
-    if(!el){ document.getElementById('questionsContainer').innerHTML="<p>No questions.</p>"; return;}
+    const el = document.getElementById('q'+index);
+    if(!el){
+        document.getElementById('questionsContainer').innerHTML="<p>No questions.</p>"; 
+        return;
+    }
     el.classList.add('active');
-    const q=questions[index];
-    if(q && (q.type==='connecting_dots'||q.type==='fill_in_blanks'||q.type==='multiple_choice')) document.getElementById('nextBtn').disabled=true;
+
+    const q = questions[index];
+    const nextBtn = document.getElementById('nextBtn');
+
+    if(q){
+        if(q.type === 'multiple_choice'){
+            nextBtn.disabled = !q._answered;
+        } 
+        else if (q.type === 'fill_in_blanks') {
+    // determine blanks count from DOM and compare to stored answered blanks
+    const totalBlanks = document.querySelectorAll(`#q${index} .blank`).length;
+    q._answeredBlanks = q._answeredBlanks || {};
+    const answeredCount = Object.keys(q._answeredBlanks).length;
+
+    // If blanks were previously answered but DOM isn't populated (edge case), populate DOM now
+    if (answeredCount > 0) {
+        document.querySelectorAll(`#q${index} .blank`).forEach(b => {
+            const existing = q._answeredBlanks[b.dataset.id];
+            if (existing) {
+                b.textContent = existing;
+                b.classList.add('filled');
+                b.style.pointerEvents = 'none';
+                // update feedback appearance if needed
+                const correctAnswer = (b.dataset.correct || '').trim().toLowerCase();
+                const fb = document.querySelector(`#q${index} .feedback`);
+                if (existing.trim().toLowerCase() === correctAnswer) {
+                    if (fb) { fb.textContent = '✅ Tama ang sagot mo!'; fb.style.color = 'green'; }
+                    b.style.backgroundColor = 'lightgreen';
+                    b.style.border = '2px solid green';
+                } else {
+                    if (fb) { fb.textContent = '❌ Mali ang sagot mo!'; fb.style.color = 'red'; }
+                    b.style.backgroundColor = 'lightcoral';
+                    b.style.border = '2px solid red';
+                    // show correct answer text near it if not present
+                    if (!b.nextElementSibling || b.nextElementSibling.tagName !== 'SPAN') {
+                        const cs = document.createElement('span');
+                        cs.textContent = ` (${b.dataset.correct})`;
+                        cs.style.color = 'green';
+                        cs.style.marginLeft = '6px';
+                        b.insertAdjacentElement('afterend', cs);
+                    }
+                }
+            }
+        });
+    }
+
+    nextBtn.disabled = answeredCount < totalBlanks;
 }
 
+        else if(q.type === 'connecting_dots'){
+            const studentPairs = q._matchedPairs || {};
+            const correctPairs = (q.correctPairs || []).filter(p => p.leftId && p.rightId);
+            const matchedCorrectCount = correctPairs.filter(p => studentPairs[p.leftId] === p.rightId).length;
+            nextBtn.disabled = matchedCorrectCount !== correctPairs.length;
+        }
+    }
+
+    // Update progress bar
+    const progressText = document.getElementById('progressText');
+    const progressBar = document.getElementById('progressBar');
+    progressText.textContent = `Tanong ${index + 1} of ${questions.length}`;
+    const progressPercent = ((index + 1) / questions.length) * 100;
+    progressBar.style.width = `${progressPercent}%`;
+}
+
+
 function nextQuestion(){
-    if(currentIndex < questions.length - 1){ currentIndex++; showQuestion(currentIndex); } 
-    else { showResult(); }
+    if(currentIndex < questions.length - 1){
+        currentIndex++; 
+        showQuestion(currentIndex);
+    } else { 
+        // fill progress bar to 100% on completion
+        const progressBar = document.getElementById('progressBar');
+        progressBar.style.width = '100%';
+        showResult(); 
+    }
 }
 
 // ----------------- Reset Module (Reusable for Retry or Exit) -----------------
 function resetModule(clearSession = false) {
   clearLeaderLines();
-  // Reset variables
+
+  // Reset variables for all question types
   currentIndex = 0;
   questions.forEach(q => {
-  if (q.type === 'multiple_choice') {
-    q._answered = false;
-    q._chosenId = null;
-    q._isCorrect = false;
-    q._answeredIndex = null; 
-  }
-  if (q.type === 'fill_in_blanks') q._answeredText = null;
-  if (q.type === 'connecting_dots') q._matchedPairs = {};
-});
+    if (q.type === 'multiple_choice') {
+      q._answered = false;
+      q._chosenId = null;
+      q._isCorrect = false;
+      q._answeredIndex = null;
+    }
 
-  // Clear UI
+    // ✅ Reset fill-in-the-blanks (new structure)
+    if (q.type === 'fill_in_blanks') {
+      q._answeredText = null;
+      q._answeredBlanks = {}; // Clears all blank entries
+      q._isCorrect = false;
+    }
+
+    // ✅ Reset matching (connecting dots)
+    if (q.type === 'connecting_dots') {
+      q._matchedPairs = {};
+      q._isCorrect = false;
+    }
+  });
+
+  // ✅ Clear all question/score/summary UI
   document.getElementById('questionsContainer').innerHTML = '';
   document.getElementById('scoreText').textContent = '';
-  document.getElementById('summaryContent').innerHTML = '';
 
-  // Reset input
-  document.getElementById('studentName').value = '';
+  // ✅ Summary Reset (important fix)
+  const summaryDiv = document.getElementById('summaryContent');
+  const summaryBtn = document.getElementById('summaryBtn');
+  if (summaryDiv) {
+    summaryDiv.innerHTML = ''; // Remove old summary items
+    summaryDiv.style.display = 'none'; // Hide it by default
+  }
+  if (summaryBtn) summaryBtn.textContent = 'View Summary'; // Reset button label
 
-  // Hide all screens
-  document.getElementById('moduleContainer').style.display = 'none';
-  document.getElementById('resultContainer').style.display = 'none';
-  document.getElementById('moduleLanding').style.display = 'none';
+  // ✅ Reset student input
+  const studentNameInput = document.getElementById('studentName');
+  if (studentNameInput) studentNameInput.value = '';
 
-  // Reset session if it's a full exit (new student)
+  // ✅ Hide all containers
+  const containers = ['moduleContainer', 'resultContainer', 'moduleLanding'];
+  containers.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
+  // ✅ Clear confetti canvas if any
+  const confettiCanvas = document.querySelector('canvas.confetti-canvas');
+  if (confettiCanvas) confettiCanvas.remove();
+
+  // ✅ Reset session (Exit flow)
   if (clearSession) {
     sessionStorage.removeItem('student_id'); // clear stored ID
     STUDENT_ID = null;
     questions = [];
     currentIndex = 0;
     clearLeaderLines();
-    document.getElementById('landing').style.display = 'block';
+    const landing = document.getElementById('landing');
+    if (landing) landing.style.display = 'block';
   } else {
-    // Retry: show module landing again
-    document.getElementById('moduleLanding').style.display = 'block';
+    // ✅ Retry flow
+    const landing = document.getElementById('moduleLanding');
+    if (landing) landing.style.display = 'block';
+  }
+
+  // ✅ Scroll up for clean start
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // ✅ Reset navigation
+  const nextBtn = document.getElementById('nextBtn');
+  if (nextBtn) nextBtn.disabled = true;
+}
+
+
+function launchConfetti() {
+  const colors = ["#FF6B6B", "#FFD93D", "#6BCB77", "#4D96FF", "#FF8C00"];
+  const confettiCount = 80;
+  const container = document.body;
+
+  for (let i = 0; i < confettiCount; i++) {
+    const confetti = document.createElement("div");
+    confetti.classList.add("confetti");
+    confetti.style.left = Math.random() * window.innerWidth + "px";
+    confetti.style.setProperty("--confetti-color", colors[Math.floor(Math.random() * colors.length)]);
+    confetti.style.animationDuration = 2 + Math.random() * 2 + "s";
+    container.appendChild(confetti);
+
+    setTimeout(() => confetti.remove(), 4000);
   }
 }
 
-// ----------------- Show Result -----------------
+// ----------------- Show Result (robust replacement) -----------------
 async function showResult() {
-  document.getElementById('moduleContainer').style.display = 'none';
-  clearLeaderLines();
+  try {
+    
+    try { document.getElementById('moduleContainer').style.display = 'none'; } catch(e){}
+    try { if (typeof clearLeaderLines === 'function') clearLeaderLines(); } catch(e){}
 
-  // Prepare answers array
-  const answersToSave = questions.map((q, index) => {
-    if (q.type === 'multiple_choice') {
-      const correctOpt = q.options[q.correct];
-      const chosenOpt = q.shuffledOptions?.find(opt => opt.id === q._chosenId);
-      return {
-        question: q.text,
-        type: q.type,
-        correct: correctOpt ? correctOpt.text : null,
-        selected: chosenOpt ? chosenOpt.text : null
-      };
-    } 
-    else if (q.type === 'fill_in_blanks') {
-      const blank = document.querySelector(`#q${index} .blank`);
-      const correctOpt = q.options[q.correct];
-      return {
-        question: q.text,
-        type: q.type,
-        correct: correctOpt ? correctOpt.text : null,
-        selected: blank ? blank.textContent.trim() : null
-      };
-    } 
-    else if (q.type === 'connecting_dots') {
-      // copy matched pairs as-is
-      const matchedPairs = {};
-      if (q._matchedPairs) Object.keys(q._matchedPairs).forEach(id => {
-        matchedPairs[id] = q._matchedPairs[id];
-      });
-      return {
-        question: q.text,
-        type: q.type,
-        correct: q.options.map(opt => ({ id: opt.id, matchId: opt.matchId })), // correct mapping
-        selected: matchedPairs
-      };
-    } 
-    else {
-      return { question: q.text, type: q.type };
-    }
-  });
+    // Play confetti and sound later 
+    try { if (typeof soundComplete !== 'undefined' && soundComplete) soundComplete.play(); } catch(e){ console.warn('soundComplete play failed', e); }
 
-  // ---------------- Calculate Score ----------------
-  let correctCount = 0;
-  questions.forEach((q, index) => {
-    if (q.type === 'multiple_choice' && q._isCorrect) correctCount++;
-    if (q.type === 'fill_in_blanks') {
-      const blank = document.querySelector(`#q${index} .blank`);
-      if (
-        blank &&
-        q.options[q.correct] &&
-        blank.textContent.trim().toLowerCase() === q.options[q.correct].text.trim().toLowerCase()
-      ) correctCount++;
-    }
-    if (q.type === 'connecting_dots') {
-  const studentPairs = q._matchedPairs || {};
-  let matchedCorrectCount = 0;
+    const answersToSave = questions.map((q, index) => {
+      try {
+        if (!q) return { question: `Question ${index+1}`, type: 'unknown', selected: null, correct: null };
 
-  (q.correctPairs || []).forEach(pair => {
-    if (studentPairs[pair.leftId] === pair.rightId) {
-      matchedCorrectCount++;
-    }
-  });
+        // multiple choice
+        if (q.type === 'multiple_choice') {
+          const correctText = q.options?.[q.correct]?.text ?? null;
+          const chosen = q._chosenId ? (q.shuffledOptions?.find(o => o.id === q._chosenId)?.text ?? null) : null;
+          return { question: q.text ?? null, type: q.type, correct: correctText, selected: chosen };
+        }
 
-  if (matchedCorrectCount === (q.correctPairs?.length || 0)) {
-    correctCount++;
-  }
-}
+        // fill in blanks 
+        if (q.type === 'fill_in_blanks') {
+          const selected = q._answeredBlanks ? Object.values(q._answeredBlanks).join(', ') : (q._answeredText ?? null);
+          const correctText = q.options?.[q.correct]?.text ?? null;
+          return { question: q.text ?? null, type: q.type, correct: correctText, selected };
+        }
 
-  });
+        // connecting dots
+        if (q.type === 'connecting_dots') {
+          const matched = {};
+          if (q._matchedPairs) Object.keys(q._matchedPairs).forEach(k => matched[k] = q._matchedPairs[k]);
+          const correct = (q.options || []).map(opt => ({ id: opt.id, matchId: opt.matchId }));
+          return { question: q.text ?? null, type: q.type, correct, selected: matched };
+        }
 
-  const scorePercent = Math.round((correctCount / questions.length) * 100);
+        // fallback
+        return { question: q.text ?? `Question ${index+1}`, type: q.type ?? 'unknown', selected: null, correct: null };
+      } catch (innerErr) {
+        console.error(`Error mapping question ${index}`, innerErr);
+        return { question: q?.text ?? `Question ${index+1}`, type: q?.type ?? 'unknown', selected: null, correct: null };
+      }
+    });
 
-  // ---------------- Show Score ----------------
-  document.getElementById('scoreText').textContent = 
-    `You scored ${correctCount} out of ${questions.length} (${scorePercent}%)`;
-  document.getElementById('resultContainer').style.display = 'block';
-
-  // ---------------- Save Attempt ----------------
-  await saveAttempt(MODULE_ID, {
-    student_id: STUDENT_ID,
-    score: scorePercent,
-    total_correct: correctCount,
-    total_questions: questions.length,
-    answers: answersToSave
-  });
-
-  // ---------------- Retry / Exit ----------------
-  document.getElementById('retryBtn').onclick = () => resetModule(false);
-  document.getElementById('exitBtn').onclick = () => resetModule(true);
-
-  // ---------------- View Summary toggle ----------------
-  const summaryBtn = document.getElementById('summaryBtn');
-  const summaryDiv = document.getElementById('summaryContent');
-
-  summaryBtn.onclick = async () => {
-    if (summaryDiv.style.display === 'none') {
-      summaryDiv.innerHTML = '';
-
-      for (let i = 0; i < answersToSave.length; i++) {
-        const a = answersToSave[i];
-        const div = document.createElement('div');
-        div.style.marginBottom = '15px';
-        let answerHTML = '';
-
-        // ========== Multiple Choice & Fill-in-the-blanks ==========
-        if (a.type === 'multiple_choice' || a.type === 'fill_in_blanks') {
-          let yourAnswerText = a.selected || 'Not answered';
-          let correctAnswerText = a.correct || 'No correct answer set';
-
-          const q = questions[i];
-          const questionImage = q.image ? await getSignedUrl(q.image) : null;
-          const correctOption = q.options[q.correct];
-          const correctOptionImage = (correctOption && correctOption.image) 
-            ? await getSignedUrl(correctOption.image) : null;
-          const chosenOpt = q.shuffledOptions?.find(opt => opt.id === q._chosenId);
-          const selectedOptionImage = (chosenOpt && chosenOpt.image)
-            ? await getSignedUrl(chosenOpt.image) : null;
-
-          answerHTML = `<div><strong>Your answer:</strong> ${yourAnswerText}`;
-          if (selectedOptionImage) answerHTML += `<br><img src="${selectedOptionImage}" style="max-width:100px;display:block;margin-top:3px;">`;
-          answerHTML += `</div>`;
-
-          answerHTML += `<div><strong>Correct answer:</strong> ${correctAnswerText}`;
-          if (correctOptionImage) answerHTML += `<br><img src="${correctOptionImage}" style="max-width:100px;display:block;margin-top:3px;">`;
-          answerHTML += `</div>`;
-
-          if (questionImage) {
-            answerHTML = `<div><strong>Question:</strong><br><img src="${questionImage}" style="max-width:150px;display:block;margin-bottom:5px;"></div>` + answerHTML;
+    // Calculate score 
+    let correctCount = 0;
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      if (!q) continue;
+      try {
+        if (q.type === 'multiple_choice') {
+          if (q._isCorrect) correctCount++;
+        } else if (q.type === 'fill_in_blanks') {
+          const user = q._answeredBlanks ? Object.values(q._answeredBlanks).join(', ').trim().toLowerCase() : (q._answeredText || '').trim().toLowerCase();
+          const correct = (q.options?.[q.correct]?.text || '').trim().toLowerCase();
+          if (correct && user === correct) correctCount++;
+        } else if (q.type === 'connecting_dots') {
+          const studentPairs = q._matchedPairs || {};
+          let matchedCorrectCount = 0;
+          (q.correctPairs || []).forEach(pair => {
+            if (studentPairs[pair.leftId] === pair.rightId) matchedCorrectCount++;
+          });
+          if (matchedCorrectCount === (q.correctPairs?.length || 0) && (q.correctPairs?.length || 0) > 0) {
+            correctCount++;
           }
         }
+      } catch (err) {
+        console.warn('Score calc error for question', i, err);
+      }
+    }
 
-        // ========== Matching / Connecting Dots ==========
-        if (a.type === 'connecting_dots') {
-          const yourPairs = await Promise.all(Object.keys(a.selected || {}).map(async leftId => {
-            const rightId = a.selected[leftId];
-            const leftItem = questions[i].options.find(opt => opt.id === leftId);
-            const rightItem = questions[i].options.find(opt => opt.id === rightId);
-            if (!leftItem || !rightItem) return '';
+    const totalQuestions = questions.length || 1;
+    const scorePercent = Math.round((correctCount / totalQuestions) * 100);
 
-            let text = `${leftItem.text} - ${rightItem.text}`;
-            if (leftItem.image) {
-              const url = await getSignedUrl(leftItem.image);
-              if (url) text += `<br><img src="${url}" style="max-width:100px;display:block;margin-top:3px;">`;
-            }
-            if (rightItem.image) {
-              const url = await getSignedUrl(rightItem.image);
-              if (url) text += `<br><img src="${url}" style="max-width:100px;display:block;margin-top:3px;">`;
-            }
-            return text;
-          }));
+    // Ensure resultContainer exists — if not, create a minimal one so user sees something
+    let resultContainer = document.getElementById('resultContainer');
+    if (!resultContainer) {
+      resultContainer = document.createElement('div');
+      resultContainer.id = 'resultContainer';
+      resultContainer.style = "position:fixed;inset:0;display:flex;justify-content:center;align-items:center;background:rgba(0,0,0,0.4);z-index:9999;";
+      resultContainer.innerHTML = `
+        <div class="result-card" style="background:#fff;padding:20px;border-radius:12px;max-width:520px;width:90%;text-align:center;">
+          <h2 class="result-title">🎉 Module Results 🎉</h2>
+          <p id="scoreText" class="score-text"></p>
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
+            <button id="retryBtn" style="padding:8px 12px;border-radius:8px;">Retry</button>
+            <button id="exitBtn" style="padding:8px 12px;border-radius:8px;">Exit</button>
+            <button id="summaryBtn" style="padding:8px 12px;border-radius:8px;">View Summary</button>
+          </div>
+          <div id="summaryContent" style="margin-top:12px;display:none;text-align:left;max-height:300px;overflow:auto;"></div>
+        </div>`;
+      document.body.appendChild(resultContainer);
+    }
 
-          const correctPairs = await Promise.all(
-            (questions[i].correctPairs || []).map(async ({ leftId, rightId }) => {
-              const leftItem = questions[i].options.find(o => o.id === leftId);
-              const rightItem = questions[i].options.find(o => o.id === rightId);
-              if (!leftItem || !rightItem) return '';
+    // Show (use flex so it centers)
+    resultContainer.style.display = resultContainer.style.display === 'none' ? 'flex' : 'flex';
+    // Put score text
+    try {
+      const scoreTextEl = document.getElementById('scoreText') || resultContainer.querySelector('#scoreText');
+      if (scoreTextEl) scoreTextEl.textContent = `Ang marka mo ay ${correctCount} sa ${totalQuestions} (${scorePercent}%)`;
+    } catch(e){ console.warn('Failed to set scoreText', e); }
 
-              let text = `${leftItem.text} - ${rightItem.text}`;
+    // Play confetti 
+    try {
+      if (typeof launchConfetti === 'function') launchConfetti();
+      else if (typeof confetti === 'function') confetti({ particleCount: 120, spread: 90, origin: { y: 0.6 }});
+    } catch (e) { console.warn('Confetti failed', e); }
 
-              if (leftItem.image) {
-                const url = await getSignedUrl(leftItem.image);
-                if (url) text += `<br><img src="${url}" style="max-width:100px; display:block; margin-top:3px;">`;
-              }
-              if (rightItem.image) {
-                const url = await getSignedUrl(rightItem.image);
-                if (url) text += `<br><img src="${url}" style="max-width:100px; display:block; margin-top:3px;">`;
-              }
-              return text;
-            })
-          );
+    // Save attempt 
+    try {
+      if (typeof saveAttempt === 'function') {
+        await saveAttempt(MODULE_ID, {
+          student_id: STUDENT_ID,
+          score: scorePercent,
+          total_correct: correctCount,
+          total_questions: totalQuestions,
+          answers: answersToSave
+        });
+      } else {
+        console.warn('saveAttempt not defined');
+      }
+    } catch (saveErr) {
+      console.error('Failed to save attempt', saveErr);
+    }
 
-          answerHTML = `<div><strong>Your pairs:</strong><br>${yourPairs.join('<br>') || 'Not answered'}</div>
-                        <div><strong>Correct pairs:</strong><br>${correctPairs.join('<br>')}</div>`;
-        }
+    // Wire up retry/exit/summary handlers if present
+    try {
+      const retryBtn = document.getElementById('retryBtn');
+      if (retryBtn) retryBtn.onclick = () => resetModule(false);
+      const exitBtn = document.getElementById('exitBtn');
+      if (exitBtn) exitBtn.onclick = () => resetModule(true);
+      const summaryBtn = document.getElementById('summaryBtn');
+      const summaryDiv = document.getElementById('summaryContent');
+      if (summaryBtn && summaryDiv) {
+        summaryBtn.onclick = async () => {
+  if (summaryDiv.style.display === 'none' || summaryDiv.style.display === '') {
+    summaryDiv.innerHTML = '';
 
-        div.innerHTML = `<strong>${a.question}</strong><br>${answerHTML}`;
-        summaryDiv.appendChild(div);
+    for (let i = 0; i < answersToSave.length; i++) {
+      const a = answersToSave[i];
+      const q = questions[i] || {};
+      const questionNumber = i + 1;
+
+      // Wrapper for each question
+      const div = document.createElement('div');
+      div.classList.add('summary-item');
+      div.style.marginBottom = '25px';
+      div.style.padding = '15px';
+      div.style.border = '2px solid #2c3e85';
+      div.style.borderRadius = '12px';
+      div.style.background = '#fffdf5';
+      div.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+
+      const header = `<h3 style="margin-top:0;">${questionNumber}. ${a.question || '(Untitled Question)'}</h3>`;
+      let content = '';
+
+      // ---------------- MULTIPLE CHOICE / FILL-IN ----------------
+      if (a.type === 'multiple_choice' || a.type === 'fill_in_blanks') {
+        let yourAnswerText = a.selected || 'Not answered';
+        let correctAnswerText = a.correct || 'No correct answer set';
+
+        const qObj = questions[i];
+        const questionImage = qObj.image ? await getSignedUrl(qObj.image) : null;
+        const correctOption = qObj.options[qObj.correct];
+        const correctOptionImage = (correctOption && correctOption.image)
+          ? await getSignedUrl(correctOption.image) : null;
+        const chosenOpt = qObj.shuffledOptions?.find(opt => opt.id === qObj._chosenId);
+        const selectedOptionImage = (chosenOpt && chosenOpt.image)
+          ? await getSignedUrl(chosenOpt.image) : null;
+
+        content = `
+          ${questionImage ? `<img src="${questionImage}" style="max-width:150px;display:block;margin-bottom:10px;">` : ''}
+          <div><strong>Your answer:</strong> ${yourAnswerText}</div>
+          ${selectedOptionImage ? `<img src="${selectedOptionImage}" style="max-width:100px;display:block;margin:5px 0;">` : ''}
+          <div><strong>Correct answer:</strong> ${correctAnswerText}</div>
+          ${correctOptionImage ? `<img src="${correctOptionImage}" style="max-width:100px;display:block;margin:5px 0;">` : ''}
+        `;
       }
 
-      summaryDiv.style.display = 'block';
-      summaryBtn.textContent = 'Back';
-      summaryDiv.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      summaryDiv.style.display = 'none';
-      summaryBtn.textContent = 'View Summary';
+        // ---------------- MATCHING (SIDE-BY-SIDE WITH TITLES + TEXT ABOVE IMAGES) ----------------
+        else if (a.type === 'connecting_dots') {
+          const qObj = questions[i];
+          const studentPairs = qObj._matchedPairs || {};
+          const correctPairs = qObj.correctPairs || [];
+
+          let pairsHTML = `
+            <div style="margin-top:15px;">
+              <h4 style="color:#2c3e85;margin-bottom:5px;">Your Pairs</h4>
+              <div style="display:grid;grid-template-columns:1fr 1fr;text-align:center;font-weight:bold;color:#2c3e85;margin-bottom:8px;">
+                <div>Left Side</div>
+                <div>Right Side</div>
+              </div>
+          `;
+
+          // ---------- YOUR PAIRS ----------
+          const yourPairEntries = Object.entries(studentPairs);
+          if (yourPairEntries.length === 0) {
+            pairsHTML += `<div style="text-align:center;font-style:italic;">No pairs matched.</div>`;
+          } else {
+            for (const [leftId, rightId] of yourPairEntries) {
+              const left = qObj.options.find(o => o.id === leftId);
+              const right = qObj.options.find(o => o.id === rightId);
+
+              const leftCell = left
+                ? `
+                  <div style="font-size:16px;">
+                    ${left.text ? `<div style="margin-bottom:4px;">${left.text}</div>` : ''}
+                    ${left.image ? `<img src="${await getSignedUrl(left.image)}" style="max-width:120px;border-radius:10px;">` : ''}
+                  </div>
+                `
+                : '';
+
+              const rightCell = right
+                ? `
+                  <div style="font-size:16px;">
+                    ${right.text ? `<div style="margin-bottom:4px;">${right.text}</div>` : ''}
+                    ${right.image ? `<img src="${await getSignedUrl(right.image)}" style="max-width:120px;border-radius:10px;">` : ''}
+                  </div>
+                `
+                : '';
+
+              pairsHTML += `
+                <div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;text-align:center;border-bottom:1px dashed #ccc;padding:10px 0;">
+                  <div>${leftCell}</div>
+                  <div>${rightCell}</div>
+                </div>
+              `;
+            }
+          }
+
+          // ---------- CORRECT PAIRS ----------
+          pairsHTML += `
+              <h4 style="color:#2c3e85;margin-top:20px;margin-bottom:5px;">Correct Pairs</h4>
+              <div style="display:grid;grid-template-columns:1fr 1fr;text-align:center;font-weight:bold;color:#2c3e85;margin-bottom:8px;">
+                <div>Left Side</div>
+                <div>Right Side</div>
+              </div>
+          `;
+
+          if (correctPairs.length === 0) {
+            pairsHTML += `<div style="text-align:center;font-style:italic;">No correct pairs set.</div>`;
+          } else {
+            for (const { leftId, rightId } of correctPairs) {
+              const left = qObj.options.find(o => o.id === leftId);
+              const right = qObj.options.find(o => o.id === rightId);
+
+              const leftCell = left
+                ? `
+                  <div style="font-size:16px;">
+                    ${left.text ? `<div style="margin-bottom:4px;">${left.text}</div>` : ''}
+                    ${left.image ? `<img src="${await getSignedUrl(left.image)}" style="max-width:120px;border-radius:10px;">` : ''}
+                  </div>
+                `
+                : '';
+
+              const rightCell = right
+                ? `
+                  <div style="font-size:16px;">
+                    ${right.text ? `<div style="margin-bottom:4px;">${right.text}</div>` : ''}
+                    ${right.image ? `<img src="${await getSignedUrl(right.image)}" style="max-width:120px;border-radius:10px;">` : ''}
+                  </div>
+                `
+                : '';
+
+              pairsHTML += `
+                <div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;text-align:center;border-bottom:1px dashed #ccc;padding:10px 0;">
+                  <div>${leftCell}</div>
+                  <div>${rightCell}</div>
+                </div>
+              `;
+            }
+          }
+
+          pairsHTML += `</div>`;
+          content = pairsHTML;
+        }
+
+      div.innerHTML = header + content;
+      summaryDiv.appendChild(div);
     }
-  };
+
+    summaryDiv.style.display = 'block';
+    summaryBtn.textContent = 'Back';
+    summaryDiv.scrollIntoView({ behavior: 'smooth' });
+  } else {
+    summaryDiv.style.display = 'none';
+    summaryBtn.textContent = 'View Summary';
+  }
+};
+
+
+      }
+    } catch (wireErr) { console.warn('Failed wiring result buttons', wireErr); }
+
+  } catch (err) {
+    console.error('Unhandled error in showResult():', err);
+    // As a last resort, still reveal any basic result UI so user isn't left with just confetti
+    try {
+      const rc = document.getElementById('resultContainer') || document.body.appendChild(document.createElement('div'));
+      if (rc) rc.style.display = 'block';
+    } catch(e){}
+    alert('Nagka-problema habang pinapakita ang resulta — tingnan ang console (F12) para sa detalye.');
+  }
 }
+
 
 // ----------------- Save Attempt -----------------
 async function saveAttempt(moduleId, attemptData){

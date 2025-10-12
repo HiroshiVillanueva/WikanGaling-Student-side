@@ -4,58 +4,109 @@
 <meta charset="UTF-8">
 <title>Interactive Student Module</title>
 <link rel="stylesheet" href="student_css.css">
+<link rel="icon" href="/favicon.ico" type="image/x-icon">
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
 </head>
 <body>
 
+<!-- Background music -->
+<audio id="bgMusic" src="student_bgmusic.wav" loop autoplay></audio> 
+<!-- Sound effects -->
+<audio id="soundCorrect" src="student_correct.wav"></audio>
+<audio id="soundWrong" src="student_wrong.wav"></audio>
+<audio id="soundComplete" src="student_complete.wav"></audio> 
+
 <!-- ----------------- Student Landing / Student Info ----------------- -->
-<div class="container" id="landing">
-  <h1>Welcome to Student Module</h1>
-  <p style="text-align:center;">Please enter your full name to continue.</p>
-  <div style="text-align:center; margin-top:15px;">
-    <input type="text" id="studentName" placeholder="Full Name" style="padding:8px; width:60%; border-radius:6px; border:1px solid #ccc;">
-    <br><br>
-    <button onclick="submitStudentInfo()">Continue</button>
-  </div>
+<div class="landing-card" id="landing">
+  <div class="sun"></div>
+  <div class="leaf left"></div>
+  <div class="leaf right"></div>
+  <div class="filipino-border"></div>
+
+  <h1 class="greeting">Kumusta, Mag-aaral!</h1>
+  <h2 class="title">Maligayang Pagdating sa Iyong Aralin!</h2>
+  <p class="description">
+    Ibigay ang iyong <strong>buong pangalan</strong> upang simulan ang iyong paglalakbay sa pagkatuto.
+  </p>
+
+  <input type="text" id="studentName" placeholder="Ilagay ang Buong Pangalan Mo Dito">
+  <button onclick="submitStudentInfo()">Ipagpatuloy</button>
 </div>
+
+<!--  Alert Popup -->
+<div id="customAlert" class="custom-alert" style="display:none;">
+  <div class="custom-alert-header">⚠️ Kinakailangan ng Input</div>
+  <div class="custom-alert-body">Pakiusap, ilagay mo muna ang iyong pangalan bago magpatuloy.</div>
+  <button onclick="closeCustomAlert()">OK</button>
+</div>
+
 
 <!-- ----------------- Module Landing ----------------- -->
 <div class="container" id="moduleLanding" style="display:none; text-align:center;">
-  <h2 id="moduleLandingTitle"></h2>
-  <p id="moduleLandingDesc"></p>
-  <p>Click the button below to start the module and answer the questions.</p>
-  <button id="startModuleBtn">Start Module</button>
+  <div class="landing-card">
+    <div class="leaf leaf-left"></div>
+    <div class="leaf leaf-right"></div>
+
+    <h2 id="moduleLandingTitle" class="landing-title">Untitled</h2>
+    <p id="moduleLandingDesc" class="landing-desc">Untitled</p>
+    <p class="landing-instructions">I-click ang button sa ibaba upang simulan ang iyong pagsasagot!</p>
+
+    <button id="startModuleBtn" class="start-button">SIMULAN</button>
+  </div>
 </div>
 
+
 <!-- ----------------- Module Container ----------------- -->
-<div class="container" id="moduleContainer" style="display:none;">
-  <h2 id="moduleTitle"></h2>
-  <div id="questionsContainer"></div>
-  <div class="nav-buttons">
-    <button id="nextBtn" onclick="nextQuestion()" disabled>SUSUNOD</button>
+<div id="moduleContainer" style="display:none;">
+  <div class="module-card">
+    <div class="module-header">
+      <div class="header-left">PAGSUSULIT</div>
+      <div class="header-right" id="progressText">Tanong 1 of 10</div>
+    </div>
+
+    <div class="progress-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <h2 id="moduleTitle" class="module-title"></h2>
+    <div id="questionsContainer"></div>
+
+    <div class="nav-buttons">
+      <button id="nextBtn" onclick="nextQuestion()" disabled class="next-button">SUSUNOD</button>
+    </div>
   </div>
 </div>
 
 <!-- ----------------- Result Container ----------------- -->
-<div class="container" id="resultContainer" style="display:none;">
-  <h2>Module Results</h2>
-  <p id="scoreText" style="text-align:center; font-weight:bold;"></p>
+<div id="resultContainer" style="display:none;">
+  <div class="result-card">
+    <div class="leaf left"></div>
+  <div class="leaf right"></div>
+    <div class="result-header">
+      <span class="badge left">📘 RESULTA</span>
+      <span class="badge right">🏆 MARKA SA MODYUL</span>
+    </div>
+    <h2 class="result-title">🎉 NASAGUTAN MO NA! 🎉</h2>
+    <p class="result-subtitle">Magaling! Kumpleto mo na ang iyong module.</p>
+    <p class="result-label">Iyong Iskor</p>
+    <p id="scoreText" class="score-text"></p>
 
-  <!-- Top buttons: Retry & Exit -->
-  <div style="text-align:center; margin-top:20px;">
-    <button id="retryBtn">Retry Module</button>
-    <button id="exitBtn">Exit Module</button>
+    <!-- Buttons: Retry & Exit -->
+    <div class="result-buttons">
+      <button id="retryBtn" class="result-btn retry">🔄 Retry Module</button>
+      <button id="exitBtn" class="result-btn exit">🚪 Exit Module</button>
+    </div>
+
+    <!-- Summary toggle -->
+    <div class="summary-section">
+      <button id="summaryBtn" class="summary-btn">📋 View Summary</button>
+      <div id="summaryContent" class="summary-content" style="display:none;"></div>
+    </div>
   </div>
-
-  <!-- Summary toggle at bottom -->
-  <div style="text-align:center; margin-top:20px;">
-    <button id="summaryBtn">View Summary</button>
-  </div>
-
-  <!-- Summary will appear under View Summary -->
-  <div id="summaryContent" style="margin-top:20px; display:none;"></div>
 </div>
+
+
 
 <!-- ----------------- JS Files at Bottom ----------------- -->
 <script src="student_js.js"></script>
