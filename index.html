@@ -1,137 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>WikanGaling</title>
-<link rel="stylesheet" href="student_css.css">
-<link rel="icon" href="WebAppLogo.jpg" type="image/x-icon">
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8">
+    <title>WikanGaling</title>
+    <link rel="stylesheet" href="student_css.css">
+    <link rel="icon" href="WebAppLogo.jpg" type="image/x-icon">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
+  </head>
+  <body>
 
-<!-- Background music -->
-<audio id="bgMusic" src="student_bgmusic.wav" loop autoplay></audio> 
-<!-- Sound effects -->
-<audio id="soundCorrect" src="student_correct.wav"></audio>
-<audio id="soundWrong" src="student_wrong.wav"></audio>
-<audio id="soundComplete" src="student_complete.wav"></audio> 
+    <!-- Background music -->
+    <audio id="bgMusic" src="student_bgmusic.wav" loop autoplay></audio> 
+    <!-- Sound effects -->
+    <audio id="soundCorrect" src="student_correct.wav"></audio>
+    <audio id="soundWrong" src="student_wrong.wav"></audio>
+    <audio id="soundComplete" src="student_complete.wav"></audio> 
 
-<!-- ----------------- Student Landing / Student Info ----------------- -->
-<div class="landing-card" id="landing">
-  <div class="sun"></div>
-  <div class="leaf left"></div>
-  <div class="leaf right"></div>
-  <div class="filipino-border"></div>
+    <!-- ----------------- Student Landing / Student Info ----------------- -->
+    <div class="landing-card" id="landing">
+      <div class="sun"></div>
+      <div class="leaf left"></div>
+      <div class="leaf right"></div>
+      <div class="filipino-border"></div>
 
-  <h1 class="greeting">Kumusta, Mag-aaral!</h1>
-  <h2 class="title">Maligayang Pagdating sa Iyong Aralin!</h2>
-  <p class="description">
-    Ibigay ang iyong <strong>buong pangalan</strong> upang simulan ang iyong paglalakbay sa pagkatuto.
-  </p>
+      <h1 class="greeting">Kumusta, Mag-aaral!</h1>
+      <h2 class="title">Maligayang Pagdating sa Iyong Aralin!</h2>
+      <p class="description">
+        Ibigay ang iyong <strong>buong pangalan</strong> upang simulan ang iyong paglalakbay sa pagkatuto.
+      </p>
 
-  <input type="text" id="studentName" placeholder="Ilagay ang Buong Pangalan Mo Dito">
-  <button id="submitStudentInfo" onclick="submitStudentInfo()">Ipagpatuloy</button>
-</div>
-
-<!--  Alert Popup -->
-<div id="customAlert" class="custom-alert" style="display:none;">
-  <div class="custom-alert-header">⚠️ Kinakailangan ng Input</div>
-  <div class="custom-alert-body">Pakiusap, ilagay mo muna ang iyong pangalan bago magpatuloy.</div>
-  <button onclick="closeCustomAlert()">OK</button>
-</div>
-
-
-<!-- ----------------- Module Landing ----------------- -->
-<div class="container" id="moduleLanding" style="display:none; text-align:center;">
-  <div class="landing-card">
-    <div class="leaf leaf-left"></div>
-    <div class="leaf leaf-right"></div>
-
-    <h2 id="moduleLandingTitle" class="landing-title">Untitled</h2>
-    <p id="moduleLandingDesc" class="landing-desc">Untitled</p>
-    <p class="landing-instructions">I-click ang button sa ibaba upang simulan ang iyong pagsasagot!</p>
-
-    <button id="startModuleBtn" class="start-button">SIMULAN</button>
-  </div>
-</div>
-
-
-<!-- ----------------- Module Container ----------------- -->
-<div id="moduleContainer" style="display:none;">
-  <div class="module-card">
-    <div class="module-header">
-      <div class="header-left">PAGSUSULIT</div>
-      <div class="header-right" id="progressText">Tanong 1 of 10</div>
+      <input type="text" id="studentName" placeholder="Ilagay ang Buong Pangalan Mo Dito">
+      <button id="submitStudentInfo" onclick="submitStudentInfo()">Ipagpatuloy</button>
     </div>
 
-    <div class="progress-container">
-      <div class="progress-bar" id="progressBar"></div>
+    <!--  Alert Popup -->
+    <div id="customAlert" class="custom-alert" style="display:none;">
+      <div class="custom-alert-header">⚠️ Kinakailangan ng Input</div>
+      <div class="custom-alert-body">Pakiusap, ilagay mo muna ang iyong pangalan bago magpatuloy.</div>
+      <button onclick="closeCustomAlert()">OK</button>
     </div>
 
-    <h2 id="moduleTitle" class="module-title"></h2>
-    <div id="questionsContainer"></div>
 
-    <div class="nav-buttons">
-      <button id="nextBtn" onclick="nextQuestion()" disabled class="next-button">SUSUNOD</button>
-    </div>
-  </div>
-</div>
+    <!-- ----------------- Module Landing ----------------- -->
+    <div class="container" id="moduleLanding" style="display:none; text-align:center;">
+      <div class="landing-card">
+        <div class="leaf leaf-left"></div>
+        <div class="leaf leaf-right"></div>
 
-<!-- ----------------- Result Container ----------------- -->
-<div id="resultContainer" style="display:none;">
-  <div class="result-card">
-    <div class="leaf left"></div>
-  <div class="leaf right"></div>
-    <div class="result-header">
-      <span class="badge left">📘 RESULTA</span>
-      <span class="badge right">🏆 MARKA SA MODYUL</span>
-    </div>
-    <h2 class="result-title">🎉 NASAGUTAN MO NA! 🎉</h2>
-    <p class="result-subtitle">Magaling! Kumpleto mo na ang iyong module.</p>
-    <p class="result-label">Iyong Iskor</p>
-    <p id="scoreText" class="score-text"></p>
+        <h2 id="moduleLandingTitle" class="landing-title">Untitled</h2>
+        <p id="moduleLandingDesc" class="landing-desc">Untitled</p>
+        <p class="landing-instructions">I-click ang button sa ibaba upang simulan ang iyong pagsasagot!</p>
 
-    <!-- Buttons: Retry & Exit -->
-    <div class="result-buttons">
-      <button id="retryBtn" class="result-btn retry">🔄 Retry Module</button>
-      <button id="exitBtn" class="result-btn exit">🚪 Exit Module</button>
+        <button id="startModuleBtn" class="start-button">SIMULAN</button>
+      </div>
     </div>
 
-    <!-- Summary toggle -->
-    <div class="summary-section">
-      <button id="summaryBtn" class="summary-btn">📋 View Summary</button>
-      <div id="summaryContent" class="summary-content" style="display:none;"></div>
+
+    <!-- ----------------- Module Container ----------------- -->
+    <div id="moduleContainer" style="display:none;">
+      <div class="module-card">
+        <div class="module-header">
+          <div class="header-left">PAGSUSULIT</div>
+          <div class="header-right" id="progressText">Tanong 1 of 10</div>
+        </div>
+
+        <div class="progress-container">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <h2 id="moduleTitle" class="module-title"></h2>
+        <div id="questionsContainer"></div>
+
+        <div class="nav-buttons">
+          <button id="nextBtn" onclick="nextQuestion()" disabled class="next-button">SUSUNOD</button>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
+
+    <!-- ----------------- Result Container ----------------- -->
+    <div id="resultContainer" style="display:none;">
+      <div class="result-card">
+        <div class="leaf left"></div>
+      <div class="leaf right"></div>
+        <div class="result-header">
+          <span class="badge left">📘 RESULTA</span>
+          <span class="badge right">🏆 MARKA SA MODYUL</span>
+        </div>
+        <h2 class="result-title">🎉 NASAGUTAN MO NA! 🎉</h2>
+        <p class="result-subtitle">Magaling! Kumpleto mo na ang iyong modyul.</p>
+        <p class="result-label">Iyong Iskor</p>
+        <p id="scoreText" class="score-text"></p>
+
+        <!-- Buttons: Retry & Exit -->
+        <div class="result-buttons">
+          <button id="retryBtn" class="result-btn retry">🔄 Ulitin</button>
+          <button id="summaryBtn" class="summary-btn">📋 Kabuuan</button>
+          <button id="exitBtn" class="result-btn exit">🚪 Tapusin</button>
+        </div>
+
+        <!-- Summary toggle -->
+        <div id="summaryContent" class="summary-content" style="display:none;"></div>
+      </div>
+    </div>
 
 
 
-<!-- ----------------- JS Files at Bottom ----------------- -->
-<script src="student_js.js"></script>
-<script>
-  // ----------------- Start Module Button Hookup -----------------
-  const startBtn = document.getElementById('startModuleBtn');
-  if (startBtn) {
-      startBtn.onclick = () => {
-          // Reset answers
-          questions.forEach(q => {
-              if (q.type === 'multiple_choice') q._answeredIndex = null;
-              if (q.type === 'fill_in_blanks') q._answeredText = null;
-              if (q.type === 'connecting_dots') q._matchedPairs = {};
-          });
+    <!-- ----------------- JS Files at Bottom ----------------- -->
+    <script src="student_js.js"></script>
+    <script>
+      // ----------------- Start Module Button Hookup -----------------
+      const startBtn = document.getElementById('startModuleBtn');
+      if (startBtn) {
+          startBtn.onclick = () => {
+              // Reset answers
+              questions.forEach(q => {
+                  if (q.type === 'multiple_choice') q._answeredIndex = null;
+                  if (q.type === 'fill_in_blanks') q._answeredText = null;
+                  if (q.type === 'connecting_dots') q._matchedPairs = {};
+              });
 
-          // Hide module landing, show module container
-          document.getElementById('moduleLanding').style.display = 'none';
-          document.getElementById('moduleContainer').style.display = 'block';
+              // Hide module landing, show module container
+              document.getElementById('moduleLanding').style.display = 'none';
+              document.getElementById('moduleContainer').style.display = 'block';
 
-          currentIndex = 0;
-          renderQuestions();
-          showQuestion(currentIndex);
-      };
-  }
-</script>
-
-</body>
+              currentIndex = 0;
+              renderQuestions();
+              showQuestion(currentIndex);
+          };
+      }
+    </script>
+  </body>
 </html>

@@ -92,6 +92,94 @@ async function loadModule() {
   questions = moduleData.questions || [];
 }
 
+// ----------------- Student Name Validation -----------------
+function validateStudentName(fullName) {
+  const out = { valid: true, reason: null, flag: false };
+
+  // Check if empty
+  if (!fullName || !fullName.trim()) {
+    out.valid = false; 
+    out.reason = 'Hindi pwedeng walang laman ang pangalan.';
+    return out;
+  }
+
+  // Allow only letters, spaces, apostrophes, and hyphens
+  if (!/^[A-Za-zÀ-ÿ\s'-]+$/.test(fullName)) {
+    out.valid = false; 
+    out.reason = 'Bawal ang mga numero o simbolo sa pangalan.';
+    return out;
+  }
+
+  // Require at least two words (first + last)
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length < 2) {
+    out.valid = false; 
+    out.reason = 'Pakilagay ang buong pangalan (hal. Juan Dela Cruz).';
+    return out;
+  }
+
+  // Each part must be at least 2 letters
+  if (parts.some(p => p.length < 2)) {
+    out.valid = false; 
+    out.reason = 'Masyadong maiksi ang isang bahagi ng pangalan.';
+    return out;
+  }
+
+  // Detect repeated letters or nonsense typing
+  const lower = fullName.toLowerCase();
+  if (/(.)\1{3,}/.test(lower)) {
+    out.valid = false;
+    out.reason = 'Masyadong maraming magkakaparehong letra.';
+    return out;
+  }
+
+  // Detect too many consonants (no real vowel balance)
+  const letters = lower.replace(/[^a-z]/g, '');
+  const vowels = (letters.match(/[aeiou]/g) || []).length;
+  const consonants = letters.length - vowels;
+
+  // If the name has 3+ consonants in a row, it’s suspicious
+  if (/[bcdfghjklmnpqrstvwxyz]{4,}/i.test(lower)) {
+    out.valid = false;
+    out.reason = 'Masyadong maraming magkasunod na katinig — mukhang hindi totoong pangalan.';
+    return out;
+  }
+
+  // If vowels are less than 15% of all letters (too few vowels)
+  if (letters.length > 4 && vowels / letters.length < 0.15) {
+    out.valid = false;
+    out.reason = 'Kulang sa patinig — mukhang hindi totoong pangalan.';
+    return out;
+  }
+
+  // Detect known gibberish / keyboard mashing
+  const mash = ['asdf','qwerty','zxcv','poiuy','ytrewq','lkjhg','asdasd','dfgh','hjkl'];
+  if (mash.some(m => lower.includes(m))) {
+    out.valid = false; 
+    out.reason = 'Parang pinindot lang ang keyboard.';
+    return out;
+  }
+
+  // Distinct letters check (avoid names like 'aaaaaa' or 'ssssss')
+  const distinct = new Set(letters);
+  if (distinct.size < 4) {
+    out.valid = false; 
+    out.reason = 'Hindi mukhang totoong pangalan (masyadong kakaunti ang iba’t ibang letra).';
+    return out;
+  }
+
+  // Vowel ratio (avoid all-consonant gibberish like 'sdfghjk')
+  const vowelCount = (letters.match(/[aeiou]/g) || []).length;
+  if (letters.length > 3 && vowelCount / letters.length < 0.15) {
+    out.valid = false; 
+    out.reason = 'Hindi mukhang totoong pangalan (kulang sa patinig).';
+    return out;
+  }
+
+  // If everything passes name validation
+  return out;
+}
+
 // ----------------- Submit Student Information -----------------
 async function submitStudentInfo() {
     const submitBtn = document.getElementById('submitStudentInfo');
@@ -99,12 +187,23 @@ async function submitStudentInfo() {
 
     const fullName = document.getElementById('studentName').value.trim();
     if (!fullName) { 
-        showCustomAlert("⚠️ Input Required", "Please enter your name before continuing.");
+        showCustomAlert("⚠️ Paki-lagay ang iyong pangalan bago magpatuloy.");
         submitBtn.disabled = false; // re-enable if input is missing
         return; 
     }
     const firstName = fullName.split(' ')[0];
-
+    const check = validateStudentName(fullName);
+    if (!check.valid) {
+        showCustomAlert("⚠️ Maling Pangalan", check.reason);
+        submitBtn.disabled = false;
+        return;
+    }
+    // If flagged, you can either block or save with flag:
+    if (check.flag) {
+      showCustomAlert("⚠️ Paki-lagay ang iyong tunay na pangalan.");
+      submitBtn.disabled = false;
+      return;
+    }
     try {
         const { data } = await supabase
           .from('students')
@@ -174,7 +273,7 @@ document.getElementById('startModuleBtn').onclick = () => {
   showQuestion(currentIndex);
 };
 
-// ----------------- Randomizer -----------------
+// ----------------- Question Randomizer -----------------
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -215,15 +314,15 @@ function renderQuestions() {
           const opts = document.createElement('div');
           opts.className = 'options';
 
-          // ensure options exists
+          // Ensure options exists
           if (!Array.isArray(q.options)) q.options = [];
 
-          // give every option a stable unique id (if not present)
+          // Give every option a stable unique id (if not present)
           q.options.forEach((opt, idx) => {
             if (!opt.id) opt.id = `${q.text.replace(/\s+/g,'_').slice(0,30)}_opt${idx}`;
           });
 
-          // normalize/store the correct option id (supports both index or id)
+          // Normalize/store the correct option id (supports both index or id)
           if (typeof q.correct === 'number') {
             q.correctId = q.options[q.correct] ? q.options[q.correct].id : null;
           } else if (typeof q.correct === 'string') {
@@ -232,11 +331,11 @@ function renderQuestions() {
             q.correctId = null;
           }
 
-          // create shuffled copy for display 
-          q.shuffledOptions = shuffleArray([...q.options]);
+            // Create shuffled copy for display 
+            q.shuffledOptions = shuffleArray([...q.options]);
 
-          // create option buttons 
-          q.shuffledOptions.forEach((opt) => {
+            // Create option buttons 
+            q.shuffledOptions.forEach((opt) => {
             const btn = document.createElement('div');
             btn.className = 'option';
             btn.dataset.optid = opt.id;
@@ -252,7 +351,7 @@ function renderQuestions() {
               btn.appendChild(img);
             }
 
-            // pass the option id to validator
+            // Pass the option id to validator
             btn.onclick = () => validateMCQ(index, opt.id, btn);
             opts.appendChild(btn);
           });
@@ -269,7 +368,24 @@ function renderQuestions() {
             renderFillInBlanks(index, q, div);
         }
 
+        // Shuffle only the right side of connecting_dots
         if (q.type === 'connecting_dots') {
+          // Extract unique left and right options
+          const leftSide = q.options.filter(o => o.side === 'left');
+          const rightSide = q.options.filter(o => o.side === 'right');
+
+          // Shuffle right side (Fisher–Yates)
+          for (let i = rightSide.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [rightSide[i], rightSide[j]] = [rightSide[j], rightSide[i]];
+          }
+
+          // Store the shuffled right side for rendering
+          q._shuffledRight = rightSide;
+        }
+
+          // ---------------- Matching ----------------
+          if (q.type === 'connecting_dots') {
             q.options = q.options || [];
             q.options.forEach(opt => { if (!opt.id) opt.id = crypto.randomUUID(); });
 
@@ -290,81 +406,100 @@ function renderQuestions() {
             leftCol.style.gap = rightCol.style.gap = '25px';
             leftCol.style.alignItems = rightCol.style.alignItems = 'center';
 
-            // Map options by id
+            // Map options by id (unique per question)
             const mapById = {};
             q.options.forEach(o => mapById[o.id] = o);
 
-            // Build unique pairs set
+            // Build unique pairs set per question
             const pairSet = new Set();
             const pairs = [];
             q.options.forEach(o => {
-                if (o.matchId) {
-                    const key = [o.id, o.matchId].sort().join('_'); // unique key regardless of order
-                    if (!pairSet.has(key)) {
-                        pairs.push({ leftId: o.id, rightId: o.matchId });
-                        pairSet.add(key);
-                    }
-                } else {
-                    pairs.push({ leftId: o.id, rightId: null });
+              if (o.matchId) {
+                const key = [o.id, o.matchId].sort().join('_');
+                if (!pairSet.has(key)) {
+                  pairs.push({ leftId: o.id, rightId: o.matchId });
+                  pairSet.add(key);
                 }
+              } else {
+                pairs.push({ leftId: o.id, rightId: null });
+              }
             });
 
             q.correctPairs = pairs.map(p => ({ leftId: p.leftId, rightId: p.rightId }));
 
+            // Randomization per question
+            const shuffledPairs = pairs.map(p => ({ ...p }));
+
+            // Add random offset 
+            const randomOffset = Math.floor(performance.now() * Math.random());
+
+            // Shuffle with offset to avoid repeat patterns
+            for (let i = shuffledPairs.length - 1; i > 0; i--) {
+              const j = (Math.floor(Math.random() * (i + 1)) + randomOffset) % shuffledPairs.length;
+              [shuffledPairs[i].rightId, shuffledPairs[j].rightId] = [shuffledPairs[j].rightId, shuffledPairs[i].rightId];
+            }
+
+            q._shuffledPairs = shuffledPairs; // store per question
+
             const makeItemDiv = (item, side) => {
-                const div = document.createElement('div');
-                div.className = `match-item ${side}`;
-                div.style.display = 'flex';
-                div.style.flexDirection = 'column';
-                div.style.alignItems = 'center';
-                div.style.justifyContent = 'center';
-                div.style.background = '#f8f8f8';
-                div.style.borderRadius = '10px';
-                div.style.padding = '15px';
-                div.style.minWidth = '150px';
-                div.style.height = '120px';
-                div.style.cursor = item ? 'pointer' : 'default';
+              const div = document.createElement('div');
+              div.className = `match-item ${side}`;
+              div.style.display = 'flex';
+              div.style.flexDirection = 'column';
+              div.style.alignItems = 'center';
+              div.style.justifyContent = 'center';
+              div.style.background = '#f8f8f8';
+              div.style.borderRadius = '10px';
+              div.style.padding = '15px';
+              div.style.minWidth = '150px';
+              div.style.height = '120px';
+              div.style.cursor = item ? 'pointer' : 'default';
 
-                if (!item) {
-                    const ph = document.createElement('div');
-                    ph.style.opacity = '0.35';
-                    ph.textContent = '—';
-                    div.appendChild(ph);
-                    return div;
-                }
-
-                div.dataset.id = item.id;
-                div.dataset.matchId = item.matchId || '';
-                div.dataset.side = side;
-
-                if (item.text) {
-                    const text = document.createElement('div');
-                    text.textContent = item.text;
-                    text.style.fontSize = '16px';
-                    text.style.fontWeight = '500';
-                    text.style.textAlign = 'center';
-                    div.appendChild(text);
-                }
-
-                if (item.image) {
-                    const img = document.createElement('img');
-                    img.alt = 'Matching Image';
-                    img.style.width = '100px';
-                    img.style.borderRadius = '8px';
-                    img.style.marginTop = '6px';
-                    getSignedUrl(item.image).then(url => { if (url) img.src = url; });
-                    div.appendChild(img);
-                }
-
-                div.onclick = () => handleMatchClick(div, q);
+              if (!item) {
+                const ph = document.createElement('div');
+                ph.style.opacity = '0.35';
+                ph.textContent = '—';
+                div.appendChild(ph);
                 return div;
+              }
+
+              div.dataset.id = item.id;
+              div.dataset.matchId = item.matchId || '';
+              div.dataset.side = side;
+
+              if (item.text) {
+                const text = document.createElement('div');
+                text.textContent = item.text;
+                text.style.fontSize = '16px';
+                text.style.fontWeight = '500';
+                text.style.textAlign = 'center';
+                div.appendChild(text);
+              }
+
+              if (item.image) {
+                const img = document.createElement('img');
+                img.alt = 'Matching Image';
+                img.style.width = '100px';
+                img.style.borderRadius = '8px';
+                img.style.marginTop = '6px';
+                getSignedUrl(item.image).then(url => { if (url) img.src = url; });
+                div.appendChild(img);
+              }
+
+              div.onclick = () => handleMatchClick(div, q);
+              return div;
             };
 
-            pairs.forEach(p => {
-                const leftDiv = makeItemDiv(mapById[p.leftId], 'left');
-                const rightDiv = makeItemDiv(p.rightId ? mapById[p.rightId] : null, 'right');
-                leftCol.appendChild(leftDiv);
-                rightCol.appendChild(rightDiv);
+            // Render left column (original order)
+            q._shuffledPairs.forEach(p => {
+              const leftDiv = makeItemDiv(mapById[p.leftId], 'left');
+              leftCol.appendChild(leftDiv);
+            });
+
+            // Render right column (randomized)
+            q._shuffledPairs.forEach(p => {
+              const rightDiv = makeItemDiv(p.rightId ? mapById[p.rightId] : null, 'right');
+              rightCol.appendChild(rightDiv);
             });
 
             matchContainer.appendChild(leftCol);
@@ -375,8 +510,7 @@ function renderQuestions() {
             fb.className = 'feedback';
             fb.style.marginTop = '12px';
             div.appendChild(fb);
-        }
-
+          }
         container.appendChild(div);
     });
 }
@@ -386,17 +520,17 @@ function renderQuestions() {
     const q = questions[qIndex];
     if (!q) return;
 
-    // prevent double answering
+    // Prevent double answering
     if (q._answered) return;
     q._answered = true;
-    q._chosenId = chosenId; // store chosen option id for summary/save
+    q._chosenId = chosenId; // Store chosen option id for summary/save
 
     const feedback = document.querySelector(`#q${qIndex} .feedback`);
     const allOptions = document.querySelectorAll(`#q${qIndex} .option`);
     allOptions.forEach(o => o.classList.remove('correct', 'wrong', 'selected'));
     element.classList.add('selected');
 
-    // determine correctId
+    // Determine correctId
     if (typeof q.correct === 'number') {
         q.correctId = q.options[q.correct] ? q.options[q.correct].id : null;
     } else if (typeof q.correct === 'string') {
@@ -405,7 +539,7 @@ function renderQuestions() {
         q.correctId = null;
     }
 
-    // highlight selected option
+    // Highlight selected option
     if (chosenId === q.correctId) {
         element.classList.add('correct');
         if (feedback) { feedback.textContent = '✅ Tama ang sagot mo!'; feedback.style.color = 'green'; }
@@ -417,18 +551,16 @@ function renderQuestions() {
         q._isCorrect = false;
         if (window.soundWrong) soundWrong.play();
 
-        // highlight the correct option even if wrong
+        // Highlight the correct option even if wrong
         if (q.correctId) {
             const correctBtn = document.querySelector(`#q${qIndex} .option[data-optid="${q.correctId}"]`);
             if (correctBtn) correctBtn.classList.add('correct');
         }
     }
 
-    // enable next button after selecting
+    // Enable next button after selecting
     document.getElementById('nextBtn').disabled = false;
 }
-
-
 
     // ----------------- Fill-in-Blanks ----------------
     function renderFillInBlanks(qIndex, q, container) {
@@ -441,18 +573,18 @@ function renderQuestions() {
       label.style.marginBottom = "6px";
       blanksDiv.appendChild(label);
 
-      // ensure answeredBlanks exists on question
+      // Ensure answeredBlanks exists on question
       q._answeredBlanks = q._answeredBlanks || {};
 
-      // create a single blank element (if you want >1 blanks per question adapt this)
+      // Create a single blank element 
       const blank = document.createElement('span');
       blank.className = 'blank placeholder';
       blank.textContent = "Ihulog Dito";
 
-      // create a stable id for this blank
+      // Create a stable id for this blank
       blank.dataset.id = `q${qIndex}_blank0`;
 
-      // store correct answer text on dataset (normalize)
+      // Store correct answer text on dataset (normalize)
       blank.dataset.correct = (q.options && q.options[q.correct] && q.options[q.correct].text) ? q.options[q.correct].text : '';
 
       blank.ondragover = (ev) => ev.preventDefault();
@@ -471,13 +603,13 @@ function renderQuestions() {
           div.className = 'option';
           div.textContent = opt.text;
           div.draggable = true;
-          // store an id in the dataTransfer so we can track which option exactly
+          // Store an id in the dataTransfer so we can track which option exactly
           div.ondragstart = (ev) => {
               try {
                   ev.dataTransfer.setData('text/plain', opt.text);
                   ev.dataTransfer.setData('application/option-id', opt.id || opt.text);
               } catch (e) {
-                  // fallback
+                  // Fallback
                   ev.dataTransfer.setData('text', opt.text);
               }
           };
@@ -496,7 +628,7 @@ function renderQuestions() {
           blank.textContent = existing;
           blank.classList.add('filled');
           blank.style.pointerEvents = 'none';
-          // apply visual correctness if matches
+          // Apply visual correctness if matches
           const correctAnswer = (blank.dataset.correct || '').trim().toLowerCase();
           if (existing.trim().toLowerCase() === correctAnswer) {
               fb.textContent = '✅ Tama ang sagot mo!';
@@ -527,7 +659,7 @@ function renderQuestions() {
     const q = questions[qIndex];
     if (!q) return;
 
-    // try to prefer option-id if provided, but fallback to text
+    // Try to prefer option-id if provided, but fallback to text
     let dataText = '';
     try {
         dataText = ev.dataTransfer.getData('text/plain').trim() || ev.dataTransfer.getData('text').trim();
@@ -548,7 +680,7 @@ function renderQuestions() {
     const correctAnswer = (blank.dataset.correct || '').trim().toLowerCase();
     const fb = document.querySelector(`#q${qIndex} .feedback`);
 
-    // clear any previous helper correctSpan next to blank
+    // Clear any previous helper correctSpan next to blank
     const nextSibling = blank.nextElementSibling;
     if (nextSibling && nextSibling.tagName === 'SPAN') nextSibling.remove();
 
@@ -573,7 +705,7 @@ function renderQuestions() {
     const totalBlanks = document.querySelectorAll(`#q${qIndex} .blank`).length;
     const answeredCount = Object.keys(q._answeredBlanks).length;
 
-    // mark question as answered if all blanks filled
+    // Mark question as answered if all blanks filled
     if (answeredCount === totalBlanks) {
         q._answered = true;
         q._answeredText = Object.values(q._answeredBlanks).join(', ');
@@ -647,26 +779,26 @@ function attemptMatch(leftEl, rightEl, question) {
 
   question._matchedPairs = question._matchedPairs || {};
 
-  // prevent matching same elements twice
+  // Prevent matching same elements twice
   if (question._matchedPairs[leftId] || Object.values(question._matchedPairs).includes(rightId)) {
     const fb = leftEl.closest('.question').querySelector('.feedback');
     if (fb) { fb.textContent = '❌ One of these is already matched'; fb.style.color = 'red'; }
-    // still draw a temporary red line to indicate invalid match
+    // Still draw a temporary red line to indicate invalid match
     drawLeaderLine(leftEl, rightEl, false);
     return;
   }
 
-  // correctness check 
+  // Correctness check 
   const isCorrect = (question.correctPairs || []).some(p => p.leftId === leftId && p.rightId === rightId);
 
-  // draw line
+  // Draw line
   drawLeaderLine(leftEl, rightEl, isCorrect);
 
   if (isCorrect) {
     leftEl.classList.add('matched');
     rightEl.classList.add('matched');
 
-    // store left->right mapping for scoring
+    // Store left->right mapping for scoring
     question._matchedPairs[leftId] = rightId;
 
     const fb = leftEl.closest('.question').querySelector('.feedback');
@@ -680,12 +812,13 @@ function attemptMatch(leftEl, rightEl, question) {
       fb.textContent = '❌ Hindi tugma'; fb.style.color = 'red'; 
       if (window.soundWrong) soundWrong.play();
     }
-    // do NOT save wrong pair (so students can try again)
+    // DO NOT save wrong pair (so students can try again)
   }
 
   updateMatchingProgress(question);
 }
 
+// ----------------- Matching Lines -----------------
 function drawLeaderLine(el1, el2, isCorrect) {
   if (!el1 || !el2) return;
 
@@ -693,32 +826,45 @@ function drawLeaderLine(el1, el2, isCorrect) {
     console.error("LeaderLine library not loaded!");
     return;
   }
-  const container = document.getElementById('moduleContainer'); // full module container
-  const matchContainer = el1.closest('.match-container') || document.body; // full match container
 
-  const line = new LeaderLine(el1, el2, {
-    color: isCorrect ? 'blue' : 'red',
-    size: 3,
-    path: 'straight',
-    startPlug: 'disc',
-    endPlug: 'disc',
-    dash: isCorrect ? false : { animation: true },
-    container: container,      // attach to the full module container
-    startSocket: 'middle',
-    endSocket: 'middle'
-  });
+  // Wait until both elements are fully rendered and have dataset.side
+  const waitUntilReady = () => {
+    if (!el1.dataset.side || !el2.dataset.side) {
+      return requestAnimationFrame(waitUntilReady);
+    }
 
-  leaderLines.push(line);
+    const container = document.getElementById('moduleContainer');
+    const matchContainer = el1.closest('.match-container') || document.body;
 
-  if (!isCorrect) {
-    setTimeout(() => {
-      try { line.remove(); } catch (e) {}
-    }, 1500);
-  }
+    const startSocket = el1.dataset.side === 'left' ? 'right' : 'left';
+    const endSocket = el2.dataset.side === 'right' ? 'left' : 'right';
 
-  container.addEventListener('scroll', () => line.position());
-  matchContainer.addEventListener('scroll', () => line.position());
-  window.addEventListener('resize', () => line.position());
+    const line = new LeaderLine(el1, el2, {
+      color: isCorrect ? 'blue' : 'red',
+      size: 3,
+      path: 'straight',
+      startPlug: 'disc',
+      endPlug: 'disc',
+      dash: isCorrect ? false : { animation: true },
+      container: container,
+      startSocket,
+      endSocket
+    });
+
+    leaderLines.push(line);
+
+    if (!isCorrect) {
+      setTimeout(() => {
+        try { line.remove(); } catch (e) {}
+      }, 1500);
+    }
+
+    container.addEventListener('scroll', () => line.position());
+    matchContainer.addEventListener('scroll', () => line.position());
+    window.addEventListener('resize', () => line.position());
+  };
+
+  requestAnimationFrame(waitUntilReady);
 }
 
 
@@ -770,7 +916,7 @@ function showQuestion(index){
             nextBtn.disabled = !q._answered;
         } 
         else if (q.type === 'fill_in_blanks') {
-    // determine blanks count from DOM and compare to stored answered blanks
+    // Determine blanks count from DOM and compare to stored answered blanks
     const totalBlanks = document.querySelectorAll(`#q${index} .blank`).length;
     q._answeredBlanks = q._answeredBlanks || {};
     const answeredCount = Object.keys(q._answeredBlanks).length;
@@ -783,7 +929,7 @@ function showQuestion(index){
                 b.textContent = existing;
                 b.classList.add('filled');
                 b.style.pointerEvents = 'none';
-                // update feedback appearance if needed
+                // Update feedback appearance if needed
                 const correctAnswer = (b.dataset.correct || '').trim().toLowerCase();
                 const fb = document.querySelector(`#q${index} .feedback`);
                 if (existing.trim().toLowerCase() === correctAnswer) {
@@ -794,7 +940,7 @@ function showQuestion(index){
                     if (fb) { fb.textContent = '❌ Mali ang sagot mo!'; fb.style.color = 'red'; }
                     b.style.backgroundColor = 'lightcoral';
                     b.style.border = '2px solid red';
-                    // show correct answer text near it if not present
+                    // Show correct answer text near it if not present
                     if (!b.nextElementSibling || b.nextElementSibling.tagName !== 'SPAN') {
                         const cs = document.createElement('span');
                         cs.textContent = ` (${b.dataset.correct})`;
@@ -821,7 +967,7 @@ function showQuestion(index){
     // Update progress bar
     const progressText = document.getElementById('progressText');
     const progressBar = document.getElementById('progressBar');
-    progressText.textContent = `Tanong ${index + 1} of ${questions.length}`;
+    progressText.textContent = `Tanong ${index + 1} ng  ${questions.length}`;
     const progressPercent = ((index + 1) / questions.length) * 100;
     progressBar.style.width = `${progressPercent}%`;
 }
@@ -832,7 +978,7 @@ function nextQuestion(){
         currentIndex++; 
         showQuestion(currentIndex);
     } else { 
-        // fill progress bar to 100% on completion
+        // Fill progress bar to 100% on completion
         const progressBar = document.getElementById('progressBar');
         progressBar.style.width = '100%';
         showResult(); 
@@ -922,7 +1068,7 @@ function resetModule(clearSession = false) {
   if (submitBtn) submitBtn.disabled = false;
 }
 
-
+// ----------------- Result Form Confetti for UI -----------------
 function launchConfetti() {
   const colors = ["#FF6B6B", "#FFD93D", "#6BCB77", "#4D96FF", "#FF8C00"];
   const confettiCount = 80;
@@ -940,7 +1086,7 @@ function launchConfetti() {
   }
 }
 
-// ----------------- Show Result (robust replacement) -----------------
+// ----------------- Show Result -----------------
 async function showResult() {
   try {
     
@@ -954,21 +1100,21 @@ async function showResult() {
       try {
         if (!q) return { question: `Question ${index+1}`, type: 'unknown', selected: null, correct: null };
 
-        // multiple choice
+        // Multiple choice
         if (q.type === 'multiple_choice') {
           const correctText = q.options?.[q.correct]?.text ?? null;
           const chosen = q._chosenId ? (q.shuffledOptions?.find(o => o.id === q._chosenId)?.text ?? null) : null;
           return { question: q.text ?? null, type: q.type, correct: correctText, selected: chosen };
         }
 
-        // fill in blanks 
+        // Fill in blanks 
         if (q.type === 'fill_in_blanks') {
           const selected = q._answeredBlanks ? Object.values(q._answeredBlanks).join(', ') : (q._answeredText ?? null);
           const correctText = q.options?.[q.correct]?.text ?? null;
           return { question: q.text ?? null, type: q.type, correct: correctText, selected };
         }
 
-        // connecting dots
+        // Connecting dots
         if (q.type === 'connecting_dots') {
           const matched = {};
           if (q._matchedPairs) Object.keys(q._matchedPairs).forEach(k => matched[k] = q._matchedPairs[k]);
@@ -976,7 +1122,7 @@ async function showResult() {
           return { question: q.text ?? null, type: q.type, correct, selected: matched };
         }
 
-        // fallback
+        // Fallback
         return { question: q.text ?? `Question ${index+1}`, type: q.type ?? 'unknown', selected: null, correct: null };
       } catch (innerErr) {
         console.error(`Error mapping question ${index}`, innerErr);
@@ -991,20 +1137,20 @@ async function showResult() {
       if (!q) continue;
       try {
         if (q.type === 'multiple_choice') {
-          if (q._isCorrect) correctCount++;
+            if (q._isCorrect) correctCount++;
         } else if (q.type === 'fill_in_blanks') {
-          const user = q._answeredBlanks ? Object.values(q._answeredBlanks).join(', ').trim().toLowerCase() : (q._answeredText || '').trim().toLowerCase();
-          const correct = (q.options?.[q.correct]?.text || '').trim().toLowerCase();
-          if (correct && user === correct) correctCount++;
+            const user = q._answeredBlanks ? Object.values(q._answeredBlanks).join(', ').trim().toLowerCase() : (q._answeredText || '').trim().toLowerCase();
+            const correct = (q.options?.[q.correct]?.text || '').trim().toLowerCase();
+            if (correct && user === correct) correctCount++;
         } else if (q.type === 'connecting_dots') {
-          const studentPairs = q._matchedPairs || {};
-          let matchedCorrectCount = 0;
-          (q.correctPairs || []).forEach(pair => {
+            const studentPairs = q._matchedPairs || {};
+            let matchedCorrectCount = 0;
+            (q.correctPairs || []).forEach(pair => {
             if (studentPairs[pair.leftId] === pair.rightId) matchedCorrectCount++;
           });
-          if (matchedCorrectCount === (q.correctPairs?.length || 0) && (q.correctPairs?.length || 0) > 0) {
-            correctCount++;
-          }
+            if (matchedCorrectCount === (q.correctPairs?.length || 0) && (q.correctPairs?.length || 0) > 0) {
+              correctCount++;
+            }
         }
       } catch (err) {
         console.warn('Score calc error for question', i, err);
@@ -1014,34 +1160,12 @@ async function showResult() {
     const totalQuestions = questions.length || 1;
     const scorePercent = Math.round((correctCount / totalQuestions) * 100);
 
-            // Ensure resultContainer exists — if not, create a minimal one so user sees something
-            let resultContainer = document.getElementById('resultContainer');
-            if (!resultContainer) {
-              resultContainer = document.createElement('div');
-              resultContainer.id = 'resultContainer';
-              resultContainer.style = "position:fixed;inset:0;display:flex;justify-content:center;align-items:center;background:rgba(0,0,0,0.4);z-index:9999;";
-              resultContainer.innerHTML = `
-                <div class="result-card" style="background:#fff;padding:20px;border-radius:12px;max-width:520px;width:90%;text-align:center;">
-                  <h2 class="result-title">🎉 Module Results 🎉</h2>
-                  <p id="scoreText" class="score-text"></p>
-                  <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
-                      <button id="retryBtn" style="padding:8px 12px;border-radius:8px;">Retry</button>
-                      <button id="exitBtn" style="padding:8px 12px;border-radius:8px;">Exit</button>
-                  </div>
-                  <div id="summaryBtnWrapper" style="display:flex;justify-content:center;margin-top:12px;">
-                      <button id="summaryBtn" style="padding:8px 12px;border-radius:8px;">View Summary</button>
-                  </div>
-                  <div id="summaryContent" style="margin-top:12px;display:none;text-align:left;max-height:300px;overflow:auto;"></div>
-                </div>`;
-              document.body.appendChild(resultContainer);
-            }
-
             // Show (use flex so it centers)
             resultContainer.style.display = resultContainer.style.display === 'none' ? 'flex' : 'flex';
             // Put score text
             try {
               const scoreTextEl = document.getElementById('scoreText') || resultContainer.querySelector('#scoreText');
-              if (scoreTextEl) scoreTextEl.textContent = `Ang marka mo ay ${correctCount} sa ${totalQuestions} (${scorePercent}%)`;
+              if (scoreTextEl) scoreTextEl.textContent = `${correctCount}  / ${totalQuestions}`;
             } catch(e){ console.warn('Failed to set scoreText', e); }
 
             // Play confetti 
@@ -1140,7 +1264,7 @@ async function showResult() {
                         `;
                       }
 
-                        // ---------------- MATCHING (SIDE-BY-SIDE WITH TITLES + TEXT ABOVE IMAGES) ----------------
+                        // ---------------- MATCHING  ----------------
                         else if (a.type === 'connecting_dots') {
                           const qObj = questions[i];
                           const studentPairs = qObj._matchedPairs || {};
@@ -1255,7 +1379,6 @@ async function showResult() {
 
   } catch (err) {
     console.error('Unhandled error in showResult():', err);
-    // As a last resort, still reveal any basic result UI so user isn't left with just confetti
     try {
       const rc = document.getElementById('resultContainer') || document.body.appendChild(document.createElement('div'));
       if (rc) rc.style.display = 'block';
@@ -1263,7 +1386,6 @@ async function showResult() {
     alert('Nagka-problema habang pinapakita ang resulta — tingnan ang console (F12) para sa detalye.');
   }
 }
-
 
 // ----------------- Save Attempt -----------------
 async function saveAttempt(moduleId, attemptData){
