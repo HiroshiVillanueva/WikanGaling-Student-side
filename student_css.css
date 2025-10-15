@@ -676,17 +676,19 @@ button:disabled {
 }
 
 .badge.left {
-  background: #fadbd8;
+  background: #d7d4d4;
 }
 
 .badge.right {
-  background: #ebdef0;
+  background: #d7d4d4;
 }
 
 .result-title {
-  font-family: 'Fredoka One', cursive;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 800;
+  font-weight: 800;
   color: #145a32;
-  font-size: 34px;
+  font-size: 40px;
   font-weight: bold;
   margin-bottom: 10px;
   text-shadow: 2px 2px #f9e79f;
@@ -701,12 +703,12 @@ button:disabled {
 .result-label {
   font-weight: bold;
   color: #1d8348;
-  font-size: 18px;
+  font-size: 30px;
 }
 
 .score-text {
   font-family: 'Nunito', sans-serif;
-  font-size: 30px;
+  font-size: 40px;
   font-weight: 800;
   color: #1e8449;
   background: #eafaf1;
