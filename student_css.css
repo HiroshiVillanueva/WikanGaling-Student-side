@@ -1,5 +1,9 @@
 
+/* ============================================================
+   FONT IMPORTS (Ensure Consistency Across Desktop & Mobile)
+============================================================ */
 @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Chewy&display=swap');
 
 /* ============================================================
    GLOBAL BASE STYLES
