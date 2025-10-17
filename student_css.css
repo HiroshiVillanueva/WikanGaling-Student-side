@@ -904,34 +904,19 @@ button:disabled {
 ============================================================ */
 @media (max-width: 768px) {
   html, body {
-    height: auto ;
-    min-height: 100vh ;
-    overflow-x: hidden ;
-    overflow-y: auto ;
-    background-attachment: scroll ;
-    padding: 0 ;
-    margin: 0 ;
-  }
-
-  .title {
-    font-size: 28px;
-  }
-
-  .description {
-    font-size: 16px;
-  }
-
-  #landing button {
-    font-size: 18px;
-    padding: 12px 35px;
+    height: 100vh;
+    overflow: hidden;
   }
 
   .landing-title {
     font-size: 26px;
+    font-family: 'Fredoka One', cursive;
   }
 
   .landing-desc {
+    color: #5d4037;
     font-size: 16px;
+    font-weight: 600;
   }
 
   .start-button {
@@ -959,13 +944,19 @@ button:disabled {
     box-sizing: border-box ;
   }
   .greeting {
+    color: #e74c3c;
     font-size: 22px ;
+    font-family: 'Fredoka One', cursive;
   }
   .title {
+    color: #2c3e50;
     font-size: 26px ;
+    font-family: 'Chewy', cursive;
   }
   .description {
+    color: #5d4037;
     font-size: 16px ;
+    font-weight: 600;
   }
   #studentName {
     width: 100% ;
