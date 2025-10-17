@@ -721,9 +721,9 @@ button:disabled {
   background: #eafaf1;
   border: 3px solid #27ae60;
   border-radius: 15px;
-  padding: 10px 15px;
+  padding: 2px 15px;
   display: inline-block;
-  margin: 15px 0 30px;
+  margin: 10px 0 30px;
   box-shadow: inset 0 0 10px rgba(46, 204, 113, 0.3);
 }
 
