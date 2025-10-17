@@ -182,6 +182,15 @@ function validateStudentName(fullName) {
 
 // ----------------- Submit Student Information -----------------
 async function submitStudentInfo() {
+  
+    // Automatically play background music once student clicks ipagpatuloy
+    bgMusic.volume = 0.2; 
+    bgMusic.play().then(() => {
+      console.log("Background music started automatically");
+    }).catch(err => {
+      console.warn("Music could not autoplay:", err);
+    });
+
     const submitBtn = document.getElementById('submitStudentInfo');
     submitBtn.disabled = true; // disable immediately on first click
 
