@@ -574,7 +574,7 @@ button:disabled {
 
 .module-title {
   font-family: 'Chewy', cursive;
-  font-size: 30px;
+  font-size: 40px;
   color: #2c3e50;
   margin-bottom: 20px;
 }
@@ -691,7 +691,7 @@ button:disabled {
 }
 
 .result-title {
-  font-family: 'Fredoka', sans-serif;
+  font-family: 'Fredoka One', cursive;
   font-weight: 800;
   color: #145a32;
   font-size: 40px;
@@ -707,9 +707,10 @@ button:disabled {
 }
 
 .result-label {
+  font-family: 'Chewy', cursive;
   font-weight: bold;
   color: #1d8348;
-  font-size: 30px;
+  font-size: 35px;
 }
 
 .score-text {
