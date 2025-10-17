@@ -8,9 +8,9 @@ html, body {
 
 body {
   font-family: 'Nunito', Arial, sans-serif;
-  background: url('student_bg.jpg') no-repeat center center fixed !important;
-  background-size: cover !important;
-  background-attachment: fixed !important;
+  background: url('student_bg.jpg') no-repeat center center fixed ;
+  background-size: cover ;
+  background-attachment: fixed ;
   min-height: 100vh;
   margin: 0;
   padding: 0;
@@ -301,7 +301,7 @@ button:disabled {
 }
 
 .leader-line {
-  z-index: 5 !important;
+  z-index: 5 ;
   position: absolute;
 }
 
@@ -686,7 +686,6 @@ button:disabled {
 .result-title {
   font-family: 'Fredoka', sans-serif;
   font-weight: 800;
-  font-weight: 800;
   color: #145a32;
   font-size: 40px;
   font-weight: bold;
@@ -784,7 +783,7 @@ button:disabled {
   text-align: left;
   background: #fff;
   padding: 20px;
-  border-radius: 20px;
+  border-radius: 10px;
   border: 3px solid #2c3e85;
   font-family: 'Nunito', sans-serif;
   font-size: 16px;
@@ -801,7 +800,7 @@ button:disabled {
 
 .summary-content::-webkit-scrollbar-thumb {
   background-color: #2c3e85;
-  border-radius: 10px;
+  border-radius: 7px;
 }
 
 .summary-item h3 {
@@ -898,12 +897,20 @@ button:disabled {
   background-color: #e68900;
 }
 
+
+
 /* ============================================================
-   MOBILE ADJUSTMENTS
+  MOBILE RESPONSIVENESS FIX 
 ============================================================ */
-@media (max-width: 600px) {
-  .landing-card {
-    padding: 30px 20px;
+@media (max-width: 768px) {
+  html, body {
+    height: auto ;
+    min-height: 100vh ;
+    overflow-x: hidden ;
+    overflow-y: auto ;
+    background-attachment: scroll ;
+    padding: 0 ;
+    margin: 0 ;
   }
 
   .title {
@@ -932,22 +939,171 @@ button:disabled {
     padding: 12px 30px;
   }
 
+  #resultContainer {
+    flex-direction: column ;
+    align-items: center ;
+    justify-content: center ;
+    width: 100% ;
+    height: auto ;
+    min-height: 100vh ;
+    margin: 0 auto ;
+    overflow: visible ;
+  }
+
+  /* Landing */
+  .landing-card {
+    width: 95% ;
+    max-width: 420px ;
+    padding: 25px 20px ;
+    margin: 50px auto ;
+    box-sizing: border-box ;
+  }
+  .greeting {
+    font-size: 22px ;
+  }
+  .title {
+    font-size: 26px ;
+  }
+  .description {
+    font-size: 16px ;
+  }
+  #studentName {
+    width: 100% ;
+    font-size: 16px ;
+  }
+  #landing button {
+    font-size: 18px ;
+    padding: 12px 28px ;
+    width: 100% ;
+  }
+
+  /* Module container */
+  #moduleContainer {
+    padding: 30px 10px ;
+  }
+
+  .module-card {
+    width: 95% ;
+    align-items: center ;
+    justify-content: center ;
+    max-width: 420px ;
+    padding: 25px 20px ;
+    margin: 0 auto ;
+    border-width: 6px ;
+    box-sizing: border-box ;
+  }
+
+  .module-title {
+    font-size: 22px ;
+    text-align: center ;
+  }
+
+  .option {
+    width: 100% ;
+    font-size: 15px ;
+    padding: 10px 12px ;
+    margin: 8px 0 ;
+    box-sizing: border-box ;
+  }
+
+  .next-button {
+    width: 100% ;
+    font-size: 17px ;
+    padding: 12px ;
+  }
+
+  /* Matching / connecting items */
+  .match-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: 15px !important;
+    padding: 10px; 
+    box-sizing: border-box;
+  }
+
+  .match-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 4px 0;
+    padding: 4px;
+    transform: scale(0.9); 
+  }
+
+  .match-item img {
+    max-width: 70px; 
+    height: auto;
+    margin: 4px 0;
+  }
+
+  .match-item button,
+  .match-item div,
+  .match-item span {
+    font-size: 14px !important; 
+    padding: 4px 8px !important;
+    max-width: 120px;
+    text-align: center;
+  }
+
+  .blank.placeholder {
+    min-width: 120px ;
+    font-size: 15px ;
+  }
+
+  /* Result section */
+  #resultContainer {
+    padding: 20px 10px ;
+  }
+
   .result-card {
-    padding: 30px 25px;
-    border-width: 6px;
+    width: 95% ;
+    max-width: 420px ;
+    padding: 25px 20px ;
+    border-width: 5px ;
+    margin: 0 auto ;
   }
 
   .result-title {
-    font-size: 28px;
+    font-size: 28px ;
+  }
+  .result-subtitle {
+    font-size: 16px ;
+  }
+  .score-text {
+    font-size: 28px ;
   }
 
-  .result-btn {
-    font-size: 16px;
-    padding: 10px 25px;
+  .result-buttons {
+    flex-direction: column ;
+    gap: 12px ;
+  }
+  .result-buttons button {
+    width: 100% ;
+    font-size: 16px ;
+    padding: 10px 0 ;
   }
 
-  .summary-btn {
-    font-size: 16px;
-    padding: 8px 25px;
+  .summary-content {
+    font-size: 14px ;
+    max-height: 300px ;
+  }
+
+  /* General fix for overflow */
+  * {
+    max-width: 100% ;
+    box-sizing: border-box ;
+  }
+
+  *::-webkit-scrollbar {
+    width: 6px ;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: #2c3e85 ;
+    border-radius: 10px ;
   }
 }
+

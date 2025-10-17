@@ -1024,7 +1024,7 @@ function resetModule(clearSession = false) {
     summaryDiv.innerHTML = ''; // Remove old summary items
     summaryDiv.style.display = 'none'; // Hide it by default
   }
-  if (summaryBtn) summaryBtn.textContent = 'View Summary'; // Reset button label
+  if (summaryBtn) summaryBtn.textContent = '📋 KABUUAN'; // Reset button label
 
   // Reset student input
   const studentNameInput = document.getElementById('studentName');
@@ -1371,7 +1371,7 @@ async function showResult() {
             summaryDiv.scrollIntoView({ behavior: 'smooth' });
           } else {
             summaryDiv.style.display = 'none';
-            summaryBtn.textContent = 'View Summary';
+            summaryBtn.textContent = '📋 KABUUAN';
           }
         };
       }
