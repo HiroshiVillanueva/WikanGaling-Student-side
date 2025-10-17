@@ -263,6 +263,13 @@ document.getElementById('startModuleBtn').onclick = () => {
     if (q.type === 'fill_in_blanks') q._answeredText = null;
     if (q.type === 'connecting_dots') q._matchedPairs = {};
   });
+
+  if (bgMusic.paused) {
+    bgMusic.volume = 0.2; // adjust volume (0–1)
+    bgMusic.play().catch(err => {
+      console.log('Autoplay blocked:', err);
+    });
+  }
   
   document.getElementById('moduleLandingTitle').textContent || 'Untitled Module';
   document.getElementById('moduleLanding').style.display = 'none';
