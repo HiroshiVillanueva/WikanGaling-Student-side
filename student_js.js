@@ -1037,9 +1037,13 @@ function resetModule(clearSession = false) {
   }
   if (summaryBtn) summaryBtn.textContent = '📋 KABUUAN'; // Reset button label
 
-  // Reset student input
-  const studentNameInput = document.getElementById('studentName');
-  if (studentNameInput) studentNameInput.value = '';
+  // ---------------- Reset all student input fields ----------------
+  const fieldsToReset = ['firstName', 'middleName', 'lastName'];
+
+  fieldsToReset.forEach(id => {
+    const input = document.getElementById(id);
+    if (input) input.value = '';
+  });
 
   // Hide all containers
   const containers = ['moduleContainer', 'resultContainer', 'moduleLanding'];
