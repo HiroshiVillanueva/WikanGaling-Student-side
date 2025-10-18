@@ -151,7 +151,6 @@ function validateStudentName(fullName) {
   return out;
 }
 
-
 // ----------------- Submit Student Information -----------------
 async function submitStudentInfo() {
   // Automatically play background music once student clicks ipagpatuloy
@@ -192,20 +191,38 @@ async function submitStudentInfo() {
   }
 
   try {
-    const { data } = await supabase
+    // Check if a student with the same first and last name exists
+    const { data: existing } = await supabase
       .from('students')
-      .select('student_id')
-      .ilike('Display_name', fullName)
-      .maybeSingle();
+      .select('student_id, Display_name')
+      .ilike('Display_name', `%${firstName}%${lastName}%`); 
 
-    if (!data) {
+    let matchedStudent = null;
+
+    if (existing && existing.length > 0) {
+      // Normalize both sides: lowercase, remove middle names/extra spaces
+      const normalize = name => {
+        const parts = name.toLowerCase().split(" ").filter(Boolean);
+        return `${parts[0]} ${parts[parts.length - 1]}`; // first + last only
+      };
+
+      const inputName = normalize(`${firstName} ${lastName}`);
+      matchedStudent = existing.find(s => normalize(s.Display_name) === inputName);
+    }
+
+    if (!matchedStudent) {
+      // Add new student if not existing
       const newId = crypto.randomUUID();
       await supabase
         .from('students')
-        .insert([{ student_id: newId, Display_name: fullName, username: firstName }]);
+        .insert([{ 
+          student_id: newId, 
+          Display_name: fullName, 
+          username: firstName 
+        }]);
       STUDENT_ID = newId;
     } else {
-      STUDENT_ID = data.student_id;
+      STUDENT_ID = matchedStudent.student_id;
     }
 
     sessionStorage.setItem('student_id', STUDENT_ID);
@@ -239,7 +256,6 @@ async function submitStudentInfo() {
     submitBtn.disabled = false;
   }
 }
-
 
 // ----------------- Start Module Button Handler -----------------
 document.getElementById('startModuleBtn').onclick = () => {
