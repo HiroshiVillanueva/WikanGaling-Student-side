@@ -95,174 +95,151 @@ async function loadModule() {
 // ----------------- Student Name Validation -----------------
 function validateStudentName(fullName) {
   const out = { valid: true, reason: null, flag: false };
-
   // Check if empty
   if (!fullName || !fullName.trim()) {
-    out.valid = false; 
+    out.valid = false;
     out.reason = 'Hindi pwedeng walang laman ang pangalan.';
     return out;
   }
 
-  // Allow only letters, spaces, apostrophes, and hyphens
-  if (!/^[A-Za-zÀ-ÿ\s'-]+$/.test(fullName)) {
-    out.valid = false; 
+  // Allow only letters and specific characters
+  if (!/^[A-Za-zÀ-ÿ\s.'-]+$/.test(fullName)) {
+    out.valid = false;
     out.reason = 'Bawal ang mga numero o simbolo sa pangalan.';
     return out;
   }
 
-  // Require at least two words (first + last)
-  const parts = fullName.trim().split(/\s+/);
-  if (parts.length < 2) {
-    out.valid = false; 
-    out.reason = 'Pakilagay ang buong pangalan (hal. Juan Dela Cruz).';
-    return out;
-  }
-
-  // Each part must be at least 2 letters
-  if (parts.some(p => p.length < 2)) {
-    out.valid = false; 
-    out.reason = 'Masyadong maiksi ang isang bahagi ng pangalan.';
-    return out;
-  }
-
-  // Detect repeated letters or nonsense typing
   const lower = fullName.toLowerCase();
+
+  // Check gibberish / keyboard mash
+  const mash = ['asdf', 'qwerty', 'zxcv', 'poiuy', 'ytrewq', 'lkjhg', 'asdasd', 'dfgh', 'hjkl'];
+  if (mash.some(m => lower.includes(m))) {
+    out.valid = false;
+    out.reason = 'Parang pinindot lang ang keyboard.';
+    return out;
+  }
+
+  // Detect too many repeated letters
   if (/(.)\1{3,}/.test(lower)) {
     out.valid = false;
     out.reason = 'Masyadong maraming magkakaparehong letra.';
     return out;
   }
 
-  // Detect too many consonants (no real vowel balance)
   const letters = lower.replace(/[^a-z]/g, '');
   const vowels = (letters.match(/[aeiou]/g) || []).length;
-  const consonants = letters.length - vowels;
-
-  // If the name has 3+ consonants in a row, it’s suspicious
-  if (/[bcdfghjklmnpqrstvwxyz]{4,}/i.test(lower)) {
+  const distinct = new Set(letters);
+  // Too many consonants in a row
+  if (/[bcdfghjklmnpqrstvwxyz]{5,}/i.test(lower)) {
     out.valid = false;
     out.reason = 'Masyadong maraming magkasunod na katinig — mukhang hindi totoong pangalan.';
     return out;
   }
-
-  // If vowels are less than 15% of all letters (too few vowels)
+  // Too few vowels
   if (letters.length > 4 && vowels / letters.length < 0.15) {
     out.valid = false;
     out.reason = 'Kulang sa patinig — mukhang hindi totoong pangalan.';
     return out;
   }
-
-  // Detect known gibberish / keyboard mashing
-  const mash = ['asdf','qwerty','zxcv','poiuy','ytrewq','lkjhg','asdasd','dfgh','hjkl'];
-  if (mash.some(m => lower.includes(m))) {
-    out.valid = false; 
-    out.reason = 'Parang pinindot lang ang keyboard.';
-    return out;
-  }
-
-  // Distinct letters check (avoid names like 'aaaaaa' or 'ssssss')
-  const distinct = new Set(letters);
+  // Not enough different letters
   if (distinct.size < 4) {
-    out.valid = false; 
+    out.valid = false;
     out.reason = 'Hindi mukhang totoong pangalan (masyadong kakaunti ang iba’t ibang letra).';
     return out;
   }
 
-  // Vowel ratio (avoid all-consonant gibberish like 'sdfghjk')
-  const vowelCount = (letters.match(/[aeiou]/g) || []).length;
-  if (letters.length > 3 && vowelCount / letters.length < 0.15) {
-    out.valid = false; 
-    out.reason = 'Hindi mukhang totoong pangalan (kulang sa patinig).';
-    return out;
-  }
-
-  // If everything passes name validation
   return out;
 }
 
+
 // ----------------- Submit Student Information -----------------
 async function submitStudentInfo() {
-  
-    // Automatically play background music once student clicks ipagpatuloy
-    bgMusic.volume = 0.2; 
-    bgMusic.play().then(() => {
-      console.log("Background music started automatically");
-    }).catch(err => {
-      console.warn("Music could not autoplay:", err);
-    });
+  // Automatically play background music once student clicks ipagpatuloy
+  bgMusic.volume = 0.2;
+  bgMusic.play().catch(err => console.warn("Music could not autoplay:", err));
 
-    const submitBtn = document.getElementById('submitStudentInfo');
-    submitBtn.disabled = true; // disable immediately on first click
+  const submitBtn = document.getElementById('submitStudentInfo');
+  submitBtn.disabled = true;
 
-    const fullName = document.getElementById('studentName').value.trim();
-    if (!fullName) { 
-        showCustomAlert("⚠️ Paki-lagay ang iyong pangalan bago magpatuloy.");
-        submitBtn.disabled = false; // re-enable if input is missing
-        return; 
+  const firstName = document.getElementById('firstName').value.trim();
+  const middleName = document.getElementById('middleName').value.trim();
+  const lastName = document.getElementById('lastName').value.trim();
+
+  // Required field checks
+  if (!firstName && !lastName) {
+    showCustomAlert("⚠️ Paki-lagay ang iyong unang pangalan at apelyido.");
+    submitBtn.disabled = false;
+    return;
+  }
+  if (!firstName) {
+    showCustomAlert("⚠️ Paki-lagay ang iyong unang pangalan.");
+    submitBtn.disabled = false;
+    return;
+  }
+  if (!lastName) {
+    showCustomAlert("⚠️ Paki-lagay ang iyong apelyido.");
+    submitBtn.disabled = false;
+    return;
+  }
+
+  // Combine into full name
+  const fullName = [firstName, middleName, lastName].filter(Boolean).join(" ");
+  const check = validateStudentName(fullName);
+  if (!check.valid) {
+    showCustomAlert("⚠️ Maling Pangalan", check.reason);
+    submitBtn.disabled = false;
+    return;
+  }
+
+  try {
+    const { data } = await supabase
+      .from('students')
+      .select('student_id')
+      .ilike('Display_name', fullName)
+      .maybeSingle();
+
+    if (!data) {
+      const newId = crypto.randomUUID();
+      await supabase
+        .from('students')
+        .insert([{ student_id: newId, Display_name: fullName, username: firstName }]);
+      STUDENT_ID = newId;
+    } else {
+      STUDENT_ID = data.student_id;
     }
-    const firstName = fullName.split(' ')[0];
-    const check = validateStudentName(fullName);
-    if (!check.valid) {
-        showCustomAlert("⚠️ Maling Pangalan", check.reason);
-        submitBtn.disabled = false;
-        return;
-    }
-    // If flagged, you can either block or save with flag:
-    if (check.flag) {
-      showCustomAlert("⚠️ Paki-lagay ang iyong tunay na pangalan.");
+
+    sessionStorage.setItem('student_id', STUDENT_ID);
+
+    // Hide landing, show module
+    document.getElementById('landing').style.display = 'none';
+    document.getElementById('moduleLanding').style.display = 'block';
+
+    // Load module info
+    const { data: moduleData, error: moduleError } = await supabase
+      .from("module")
+      .select("title, description, form_data")
+      .eq("module_id", MODULE_ID)
+      .single();
+
+    if (moduleError || !moduleData) {
+      alert("Failed to load module info.");
       submitBtn.disabled = false;
       return;
     }
-    try {
-        const { data } = await supabase
-          .from('students')
-          .select('student_id')
-          .ilike('Display_name', fullName)
-          .maybeSingle();
 
-        if(!data) {
-            const newId = crypto.randomUUID();
-            const { data: insertData } = await supabase
-                .from('students')
-                .insert([{ student_id: newId, Display_name: fullName, username: firstName }])
-                .select()
-                .single();
-            STUDENT_ID = newId;
-        } else {
-            STUDENT_ID = data.student_id;
-        }
+    document.getElementById('moduleLandingTitle').textContent = moduleData.title || "Untitled Module";
+    document.getElementById('moduleLandingDesc').textContent = moduleData.description || "No description available.";
+    document.getElementById('moduleTitle').textContent = moduleData.title || "Untitled Module";
 
-        sessionStorage.setItem('student_id', STUDENT_ID);
+    questions = moduleData.form_data?.questions || [];
 
-        document.getElementById('landing').style.display = 'none';
-        document.getElementById('moduleLanding').style.display = 'block';
-
-        // Load module info
-        const { data: moduleData, error: moduleError } = await supabase
-            .from("module")
-            .select("title, description, form_data")
-            .eq("module_id", MODULE_ID)
-            .single();
-
-        if (moduleError || !moduleData) { 
-            alert("Failed to load module info."); 
-            submitBtn.disabled = false; // re-enable on error
-            return; 
-        }
-
-        document.getElementById('moduleLandingTitle').textContent = moduleData.title || "Untitled Module";
-        document.getElementById('moduleLandingDesc').textContent = moduleData.description || "No description available.";
-
-        document.getElementById('moduleTitle').textContent = moduleData.title || "Untitled Module";
-
-        questions = moduleData.form_data?.questions || [];
-
-    } catch(err) {
-        console.error("submitStudentInfo failed:", err);
-        alert("Check console for Supabase errors.");
-        submitBtn.disabled = false; // re-enable if exception occurs
-    }
+  } catch (err) {
+    console.error("submitStudentInfo failed:", err);
+    alert("Check console for Supabase errors.");
+    submitBtn.disabled = false;
+  }
 }
+
 
 // ----------------- Start Module Button Handler -----------------
 document.getElementById('startModuleBtn').onclick = () => {
@@ -397,7 +374,7 @@ function renderQuestions() {
           if (q.type === 'connecting_dots') {
             q.options = q.options || [];
             q.options.forEach(opt => { if (!opt.id) opt.id = crypto.randomUUID(); });
-
+            
             const matchContainer = document.createElement('div');
             matchContainer.className = 'match-container';
             matchContainer.style.display = 'flex';
@@ -414,6 +391,15 @@ function renderQuestions() {
             leftCol.style.flexDirection = rightCol.style.flexDirection = 'column';
             leftCol.style.gap = rightCol.style.gap = '25px';
             leftCol.style.alignItems = rightCol.style.alignItems = 'center';
+
+            const label = document.createElement('div');
+            label.textContent = "I-click ang bawat aytem sa tamang kapareho nito";
+            label.style.fontSize = "16px";
+            label.style.marginBottom = "6px";
+            label.style.fontWeight = "500";
+            label.style.textAlign = "center";
+            label.style.color = "#333";
+            div.appendChild(label);
 
             // Map options by id (unique per question)
             const mapById = {};
@@ -578,7 +564,7 @@ function renderQuestions() {
 
       const label = document.createElement('div');
       label.textContent = "Pindutin nang Matagal at I-drag ang sagot mo dito sa patlang:";
-      label.style.fontSize = "14.4px";
+      label.style.fontSize = "16px";
       label.style.marginBottom = "6px";
       blanksDiv.appendChild(label);
 

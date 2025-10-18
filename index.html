@@ -31,9 +31,14 @@
         Ibigay ang iyong <strong>buong pangalan</strong> upang simulan ang iyong paglalakbay sa pagkatuto.
       </p>
 
-      <input type="text" id="studentName" placeholder="Ilagay ang Buong Pangalan Mo Dito">
+      <div class="name-fields">
+        <input type="text" id="firstName" placeholder="Pangalan" required>
+        <input type="text" id="middleName" placeholder="Inisyal">
+        <input type="text" id="lastName" placeholder="Apelyido" required>
+      </div>
       <button id="submitStudentInfo" onclick="submitStudentInfo()">IPAGPATULOY</button>
     </div>
+
 
     <!--  Alert Popup -->
     <div id="customAlert" class="custom-alert" style="display:none;">

@@ -10,7 +10,7 @@
 ============================================================ */
 html, body {
   height: 100%;
-  overflow: auto; 
+  overflow: hidden; 
 }
 
 body {
@@ -174,21 +174,45 @@ h1, h2 {
   font-weight: 600;
 }
 
-/* Input + Continue Button */
-#studentName {
-  width: 80%;
+
+#firstName,
+#middleName,
+#lastName {
+  width: 100%;
   padding: 12px 15px;
   border-radius: 10px;
   border: 2px solid #ccc;
-  margin-bottom: 20px;
   font-size: 16px;
   outline: none;
   transition: border 0.3s;
 }
 
-#studentName:focus {
+#firstName:focus,
+#middleName:focus,
+#lastName:focus {
   border-color: #9b59b6;
 }
+
+.name-fields {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  width: 80%;
+  margin: 0 auto 20px auto;
+}
+
+.name-fields #firstName,
+.name-fields #lastName {
+  flex: 1.5;
+  text-align: center;
+}
+
+.name-fields #middleName {
+  flex: 0.5; 
+  text-align: center; 
+}
+
 
 #landing button {
   background-color: #9b59b6;
@@ -932,6 +956,15 @@ button:disabled {
   .start-button {
     font-size: 18px;
     padding: 12px 30px;
+  }
+
+  .name-fields {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .name-fields input {
+    width: 100%;
   }
 
   #resultContainer {
