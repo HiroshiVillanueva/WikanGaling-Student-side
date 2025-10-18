@@ -1334,8 +1334,8 @@ async function showResult() {
                           pairsHTML += `
                               <h4 style="color:#2c3e85;margin-top:20px;margin-bottom:5px;">Tamang pares</h4>
                               <div style="display:grid;grid-template-columns:1fr 1fr;text-align:center;font-weight:bold;color:#2c3e85;margin-bottom:8px;">
-                                <div>Left Side</div>
-                                <div>Right Side</div>
+                                <div>Kaliwang Panig</div>
+                                <div>Kanang Panig</div>
                               </div>
                           `;
 
