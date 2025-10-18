@@ -577,7 +577,7 @@ function renderQuestions() {
       blanksDiv.className = 'blanks-container';
 
       const label = document.createElement('div');
-      label.textContent = "I-drag ang sagot mo dito sa patlang:";
+      label.textContent = "Pindutin nang Matagal at I-drag ang sagot mo dito sa patlang:";
       label.style.fontSize = "14.4px";
       label.style.marginBottom = "6px";
       blanksDiv.appendChild(label);
