@@ -1272,9 +1272,9 @@ async function showResult() {
 
                         content = `
                           ${questionImage ? `<img src="${questionImage}" style="max-width:150px;display:block;margin-bottom:10px;">` : ''}
-                          <div><strong>Your answer:</strong> ${yourAnswerText}</div>
+                          <div><strong>Sagot Mo:</strong> ${yourAnswerText}</div>
                           ${selectedOptionImage ? `<img src="${selectedOptionImage}" style="max-width:100px;display:block;margin:5px 0;">` : ''}
-                          <div><strong>Correct answer:</strong> ${correctAnswerText}</div>
+                          <div><strong>Tamang Sagot:</strong> ${correctAnswerText}</div>
                           ${correctOptionImage ? `<img src="${correctOptionImage}" style="max-width:100px;display:block;margin:5px 0;">` : ''}
                         `;
                       }
@@ -1287,17 +1287,17 @@ async function showResult() {
 
                           let pairsHTML = `
                             <div style="margin-top:15px;">
-                              <h4 style="color:#2c3e85;margin-bottom:5px;">Your Pairs</h4>
+                              <h4 style="color:#2c3e85;margin-bottom:5px;">Pares Mo</h4>
                               <div style="display:grid;grid-template-columns:1fr 1fr;text-align:center;font-weight:bold;color:#2c3e85;margin-bottom:8px;">
-                                <div>Left Side</div>
-                                <div>Right Side</div>
+                                <div>Kaliwang Panig</div>
+                                <div>Kanang Panig</div>
                               </div>
                           `;
 
                           // ---------- YOUR PAIRS ----------
                           const yourPairEntries = Object.entries(studentPairs);
                           if (yourPairEntries.length === 0) {
-                            pairsHTML += `<div style="text-align:center;font-style:italic;">No pairs matched.</div>`;
+                            pairsHTML += `<div style="text-align:center;font-style:italic;">Walang Tamang Pares.</div>`;
                           } else {
                             for (const [leftId, rightId] of yourPairEntries) {
                               const left = qObj.options.find(o => o.id === leftId);
@@ -1332,7 +1332,7 @@ async function showResult() {
 
                           // ---------- CORRECT PAIRS ----------
                           pairsHTML += `
-                              <h4 style="color:#2c3e85;margin-top:20px;margin-bottom:5px;">Correct Pairs</h4>
+                              <h4 style="color:#2c3e85;margin-top:20px;margin-bottom:5px;">Tamang pares</h4>
                               <div style="display:grid;grid-template-columns:1fr 1fr;text-align:center;font-weight:bold;color:#2c3e85;margin-bottom:8px;">
                                 <div>Left Side</div>
                                 <div>Right Side</div>
