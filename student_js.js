@@ -112,7 +112,7 @@ function validateStudentName(fullName) {
   const lower = fullName.toLowerCase();
 
   // Check gibberish / keyboard mash
-  const mash = ['asdf', 'qwerty', 'zxcv', 'poiuy', 'ytrewq', 'lkjhg', 'asdasd', 'dfgh', 'hjkl'];
+  const mash = ['asdf', 'qwerty', 'zxcv', 'poiuy', 'ytrewq', 'lkjhg', 'asdasd', 'dfgh', 'hjkl', 'sdgsdfs', 'mfnjdhube', 'pwoeripwek', 'cvnxjcbvsjus' ];
   if (mash.some(m => lower.includes(m))) {
     out.valid = false;
     out.reason = 'Parang pinindot lang ang keyboard.';
@@ -245,7 +245,7 @@ async function submitStudentInfo() {
     }
 
     document.getElementById('moduleLandingTitle').textContent = moduleData.title || "Untitled Module";
-    document.getElementById('moduleLandingDesc').textContent = moduleData.description || "No description available.";
+    document.getElementById('moduleLandingDesc').textContent = moduleData.description;
     document.getElementById('moduleTitle').textContent = moduleData.title || "Untitled Module";
 
     questions = moduleData.form_data?.questions || [];

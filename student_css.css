@@ -41,7 +41,7 @@ body::before {
 }
 
 div {
-  font-size: 18px;
+  font-size: 20px;
 }
 
 h1, h2 {
@@ -255,7 +255,7 @@ h1, h2 {
 
 .options {
   margin-top: 10px;
-  font-size: 18px;
+  font-size: 20px;
 }
 
 .option {
@@ -598,7 +598,7 @@ button:disabled {
 
 .module-title {
   font-family: 'Chewy', cursive;
-  font-size: 40px;
+  font-size: 30px;
   color: #2c3e50;
   margin-bottom: 20px;
 }
@@ -1036,7 +1036,7 @@ button:disabled {
 
   .option {
     width: 100% ;
-    font-size: 15px ;
+    font-size: 22px ;
     padding: 10px 12px ;
     margin: 8px 0 ;
     box-sizing: border-box ;
