@@ -933,167 +933,225 @@ button:disabled {
 
 
 
-/* ============================================================
-  MOBILE RESPONSIVENESS FIX 
-============================================================ */
-@media (max-width: 768px) {
-  html, body {
-    height: auto;
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
-  }
+  /* ============================================================
+    MOBILE RESPONSIVENESS FIX 
+  ============================================================ */
+  @media (max-width: 768px) {
+    html, body {
+      height: 100vh;
+      overflow: hidden;
+    }
 
-  body {
-    background-attachment: scroll;
-    background-size: cover;
-  }
+    .summary-content div {
+      font-size: 15px;
+      white-space: normal;  
+      word-wrap: break-word; 
+      overflow-wrap: break-word; 
+    }
 
-  /* General container scaling */
-  #moduleLanding,
-  #moduleContainer,
-  #resultContainer {
-    width: 100%;
-    height: auto;
-    margin: 0 auto;
-    padding: 20px 10px;
-    box-sizing: border-box;
-    overflow-y: auto !important;
-  }
 
-  /* Landing Section */
-  .landing-card {
-    width: 95%;
-    max-width: 420px;
-    padding: 25px 20px;
-    margin: 40px auto;
-  }
+    .landing-title {
+      font-size: 26px;
+      font-family: 'Fredoka One', cursive;
+    }
 
-  .greeting {
-    font-size: 22px;
-  }
-  .title {
-    font-size: 26px;
-  }
-  .description {
-    font-size: 16px;
-  }
+    .landing-desc {
+      color: #5d4037;
+      font-size: 16px;
+      font-weight: 600;
+    }
 
-  .name-fields {
-    flex-direction: column;
-    gap: 12px;
-    width: 100%;
-  }
+    .start-button {
+      font-size: 18px;
+      padding: 12px 30px;
+    }
 
-  .name-fields input {
-    width: 100%;
-    font-size: 16px;
-  }
+    .name-fields {
+      flex-direction: column;
+      gap: 15px;
+    }
 
-  #landing button {
-    width: 100%;
-    font-size: 18px;
-    padding: 12px 28px;
-  }
+    .name-fields input {
+      width: 100%;
+    }
 
-  /* Module container */
-  #moduleContainer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 20px 15px;
-  }
+    #resultContainer {
+      flex-direction: column ;
+      align-items: center ;
+      justify-content: center ;
+      width: 100% ;
+      height: auto ;
+      min-height: 100vh ;
+      margin: 0 auto ;
+      overflow: visible ;
+      overflow-y: scroll !important; 
+      -webkit-overflow-scrolling: touch !important; 
+    }
 
-  .module-card {
-    width: 95%;
-    max-width: 420px;
-    padding: 25px 20px;
-    margin: 10px auto;
-  }
+    /* Landing */
+    .landing-card {
+      width: 95% ;
+      max-width: 420px ;
+      padding: 25px 20px ;
+      margin: 50px auto ;
+      box-sizing: border-box ;
+    }
+    .greeting {
+      color: #e74c3c;
+      font-size: 22px ;
+      font-family: 'Fredoka One', cursive;
+    }
+    .title {
+      color: #2c3e50;
+      font-size: 26px ;
+      font-family: 'Chewy', cursive;
+    }
+    .description {
+      color: #5d4037;
+      font-size: 16px ;
+      font-weight: 600;
+    }
+    #studentName {
+      width: 100% ;
+      font-size: 16px ;
+    }
+    #landing button {
+      font-size: 18px ;
+      padding: 12px 28px ;
+      width: 100% ;
+    }
 
-  .module-title {
-    font-size: 24px;
-  }
+    /* Module container */
+    #moduleContainer {
+      padding: 30px 10px ;
+    }
 
-  .option {
-    width: 100%;
-    font-size: 18px;
-    padding: 10px;
-    margin: 8px 0;
-  }
+    .module-card {
+      width: 95% ;
+      align-items: center ;
+      justify-content: center ;
+      max-width: 420px ;
+      padding: 25px 15px ;
+      margin: 0 auto ;
+      border-width: 6px ;
+      box-sizing: border-box ;
+    }
 
-  .next-button {
-    width: 100%;
-    font-size: 17px;
-    padding: 12px;
-  }
+    .module-title {
+      font-size: 22px ;
+      text-align: center ;
+    }
 
-  /* Matching items */
-  .match-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    padding: 10px;
-    width: 100%;
-  }
+    .option {
+      width: 100% ;
+      font-size: 18px ;
+      padding: 10px 12px ;
+      margin: 8px 0 ;
+      box-sizing: border-box ;
+    }
 
-  .match-item {
-    transform: scale(0.9);
-    padding: 8px;
-    font-size: 14px;
-  }
+    .next-button {
+      width: 100% ;
+      font-size: 17px ;
+      padding: 12px ;
+    }
 
-  .match-item img {
-    max-width: 60px;
-  }
+    /* Matching / connecting items */
+    .match-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      gap: 15px !important;
+      padding: 10px; 
+      box-sizing: border-box;
+    }
+   
+    .match-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 4px 0;
+      padding: 4px;
+      transform: scale(0.9); 
+    }
 
-  .blank.placeholder {
-    font-size: 14px;
-    min-width: 100px;
-  }
+    .match-item div {
+      font-size: 20px;
+    }
 
-  /* Results */
-  .result-card {
-    width: 95%;
-    max-width: 420px;
-    padding: 25px 20px;
-    margin: 20px auto;
-  }
+    .match-item img {
+      max-width: 70px; 
+      height: auto;
+      margin: 4px 0;
+    }
 
-  .result-title {
-    font-size: 26px;
-  }
-  .score-text {
-    font-size: 26px;
-  }
+    .match-item button,
+    .match-item div,
+    .match-item span {
+      font-size: 14px !important; 
+      padding: 4px 8px !important;
+      max-width: 120px;
+      text-align: center;
+    }
 
-  .result-buttons {
-    flex-direction: column;
-    gap: 12px;
-  }
-  .result-buttons button {
-    width: 100%;
-    font-size: 16px;
-    padding: 10px 0;
-  }
+    .blank.placeholder {
+      min-width: 120px ;
+      font-size: 15px ;
+    }
 
-  .summary-content {
-    font-size: 14px;
-    max-height: 300px;
-  }
+    /* Result section */
+    #resultContainer {
+      padding: 20px 10px ;
+    }
 
-  /* Global adjustment */
-  * {
-    box-sizing: border-box;
-    max-width: 100%;
-  }
+    .result-card {
+      width: 95% ;
+      max-width: 420px ;
+      padding: 25px 20px ;
+      border-width: 5px ;
+      margin: 0 auto ;
+    }
 
-  *::-webkit-scrollbar {
-    width: 6px;
+    .result-title {
+      font-size: 28px ;
+    }
+    .result-subtitle {
+      font-size: 16px ;
+    }
+    .score-text {
+      font-size: 28px ;
+    }
+
+    .result-buttons {
+      flex-direction: column ;
+      gap: 12px ;
+    }
+    .result-buttons button {
+      width: 100% ;
+      font-size: 16px ;
+      padding: 10px 0 ;
+    }
+
+    .summary-content {
+      font-size: 14px ;
+      max-height: 300px ;
+    }
+
+    /* General fix for overflow */
+    * {
+      max-width: 100% ;
+      box-sizing: border-box ;
+    }
+
+    *::-webkit-scrollbar {
+      width: 6px ;
+    }
+    *::-webkit-scrollbar-thumb {
+      background: #2c3e85 ;
+      border-radius: 10px ;
+    }
   }
-  *::-webkit-scrollbar-thumb {
-    background: #2c3e85;
-    border-radius: 10px;
-  }
-}
 

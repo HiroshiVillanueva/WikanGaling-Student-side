@@ -1279,103 +1279,113 @@ async function showResult() {
                         `;
                       }
 
-                        // ---------------- MATCHING  ----------------
                         else if (a.type === 'connecting_dots') {
-                          const qObj = questions[i];
-                          const studentPairs = qObj._matchedPairs || {};
-                          const correctPairs = qObj.correctPairs || [];
+                        const qObj = questions[i];
+                        const studentPairs = qObj._matchedPairs || {};
+                        const correctPairs = qObj.correctPairs || [];
 
-                          let pairsHTML = `
-                            <div style="margin-top:15px;">
-                              <h4 style="color:#2c3e85;margin-bottom:5px;">Pares Mo</h4>
-                              <div style="display:grid;grid-template-columns:1fr 1fr;text-align:center;font-weight:bold;color:#2c3e85;margin-bottom:8px;">
-                                <div>Kaliwang Panig</div>
-                                <div>Kanang Panig</div>
+                        let pairsHTML = `
+                          <div style="margin-top:15px;">
+                            <h4 style="color:#2c3e85;margin-bottom:5px;">Pares Mo</h4>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;text-align:center;font-weight:bold;color:#2c3e85;margin-bottom:8px;">
+                              <div>Kaliwang Panig</div>
+                              <div>Kanang Panig</div>
+                            </div>
+                        `;
+
+                        // ---------- YOUR PAIRS ----------
+                        const yourPairEntries = Object.entries(studentPairs);
+
+                        if (yourPairEntries.length === 0) {
+                          pairsHTML += `<div style="text-align:center;font-style:italic;">Walang Tamang Pares.</div>`;
+                        } else {
+                          for (const [leftId, rightId] of yourPairEntries) {
+                            const left = qObj.options.find(o => o.id === leftId);
+                            const right = qObj.options.find(o => o.id === rightId);
+
+                            const leftCell = left ? `
+                              <div style="font-size:16px; max-width:100%; word-wrap:break-word; overflow:hidden;">
+                                ${left.text ? `<div style="margin-bottom:4px;">${left.text}</div>` : ''}
+                                ${left.image ? `<img src="${await getSignedUrl(left.image)}" 
+                                  style="max-width:100%; height:auto; border-radius:10px; display:block; margin:0 auto;">` : ''}
                               </div>
-                          `;
+                            ` : '';
 
-                          // ---------- YOUR PAIRS ----------
-                          const yourPairEntries = Object.entries(studentPairs);
-                          if (yourPairEntries.length === 0) {
-                            pairsHTML += `<div style="text-align:center;font-style:italic;">Walang Tamang Pares.</div>`;
-                          } else {
-                            for (const [leftId, rightId] of yourPairEntries) {
-                              const left = qObj.options.find(o => o.id === leftId);
-                              const right = qObj.options.find(o => o.id === rightId);
-
-                              const leftCell = left
-                                ? `
-                                  <div style="font-size:16px;">
-                                    ${left.text ? `<div style="margin-bottom:4px;">${left.text}</div>` : ''}
-                                    ${left.image ? `<img src="${await getSignedUrl(left.image)}" style="max-width:120px;border-radius:10px;">` : ''}
-                                  </div>
-                                `
-                                : '';
-
-                              const rightCell = right
-                                ? `
-                                  <div style="font-size:16px;">
-                                    ${right.text ? `<div style="margin-bottom:4px;">${right.text}</div>` : ''}
-                                    ${right.image ? `<img src="${await getSignedUrl(right.image)}" style="max-width:120px;border-radius:10px;">` : ''}
-                                  </div>
-                                `
-                                : '';
-
-                              pairsHTML += `
-                                <div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;text-align:center;border-bottom:1px dashed #ccc;padding:10px 0;">
-                                  <div>${leftCell}</div>
-                                  <div>${rightCell}</div>
-                                </div>
-                              `;
-                            }
-                          }
-
-                          // ---------- CORRECT PAIRS ----------
-                          pairsHTML += `
-                              <h4 style="color:#2c3e85;margin-top:20px;margin-bottom:5px;">Tamang pares</h4>
-                              <div style="display:grid;grid-template-columns:1fr 1fr;text-align:center;font-weight:bold;color:#2c3e85;margin-bottom:8px;">
-                                <div>Kaliwang Panig</div>
-                                <div>Kanang Panig</div>
+                            const rightCell = right ? `
+                              <div style="font-size:16px; max-width:100%; word-wrap:break-word; overflow:hidden;">
+                                ${right.text ? `<div style="margin-bottom:4px;">${right.text}</div>` : ''}
+                                ${right.image ? `<img src="${await getSignedUrl(right.image)}" 
+                                  style="max-width:100%; height:auto; border-radius:10px; display:block; margin:0 auto;">` : ''}
                               </div>
-                          `;
+                            ` : '';
 
-                          if (correctPairs.length === 0) {
-                            pairsHTML += `<div style="text-align:center;font-style:italic;">No correct pairs set.</div>`;
-                          } else {
-                            for (const { leftId, rightId } of correctPairs) {
-                              const left = qObj.options.find(o => o.id === leftId);
-                              const right = qObj.options.find(o => o.id === rightId);
-
-                              const leftCell = left
-                                ? `
-                                  <div style="font-size:16px;">
-                                    ${left.text ? `<div style="margin-bottom:4px;">${left.text}</div>` : ''}
-                                    ${left.image ? `<img src="${await getSignedUrl(left.image)}" style="max-width:120px;border-radius:10px;">` : ''}
-                                  </div>
-                                `
-                                : '';
-
-                              const rightCell = right
-                                ? `
-                                  <div style="font-size:16px;">
-                                    ${right.text ? `<div style="margin-bottom:4px;">${right.text}</div>` : ''}
-                                    ${right.image ? `<img src="${await getSignedUrl(right.image)}" style="max-width:120px;border-radius:10px;">` : ''}
-                                  </div>
-                                `
-                                : '';
-
-                              pairsHTML += `
-                                <div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;text-align:center;border-bottom:1px dashed #ccc;padding:10px 0;">
-                                  <div>${leftCell}</div>
-                                  <div>${rightCell}</div>
-                                </div>
-                              `;
-                            }
+                            pairsHTML += `
+                              <div style="
+                                display:grid;
+                                grid-template-columns:1fr 1fr;
+                                align-items:center;
+                                text-align:center;
+                                border-bottom:1px dashed #ccc;
+                                padding:10px 0;
+                              ">
+                                <div>${leftCell}</div>
+                                <div>${rightCell}</div>
+                              </div>
+                            `;
                           }
-
-                          pairsHTML += `</div>`;
-                          content = pairsHTML;
                         }
+
+                        // ---------- CORRECT PAIRS ----------
+                        pairsHTML += `
+                            <h4 style="color:#2c3e85;margin-top:20px;margin-bottom:5px;">Tamang Pares</h4>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;text-align:center;font-weight:bold;color:#2c3e85;margin-bottom:8px;">
+                              <div>Kaliwang Panig</div>
+                              <div>Kanang Panig</div>
+                            </div>
+                        `;
+
+                        if (correctPairs.length === 0) {
+                          pairsHTML += `<div style="text-align:center;font-style:italic;">No correct pairs set.</div>`;
+                        } else {
+                          for (const { leftId, rightId } of correctPairs) {
+                            const left = qObj.options.find(o => o.id === leftId);
+                            const right = qObj.options.find(o => o.id === rightId);
+
+                            const leftCell = left ? `
+                              <div style="font-size:16px; max-width:100%; word-wrap:break-word; overflow:hidden;">
+                                ${left.text ? `<div style="margin-bottom:4px;">${left.text}</div>` : ''}
+                                ${left.image ? `<img src="${await getSignedUrl(left.image)}" 
+                                  style="max-width:100%; height:auto; border-radius:10px; display:block; margin:0 auto;">` : ''}
+                              </div>
+                            ` : '';
+
+                            const rightCell = right ? `
+                              <div style="font-size:16px; max-width:100%; word-wrap:break-word; overflow:hidden;">
+                                ${right.text ? `<div style="margin-bottom:4px;">${right.text}</div>` : ''}
+                                ${right.image ? `<img src="${await getSignedUrl(right.image)}" 
+                                  style="max-width:100%; height:auto; border-radius:10px; display:block; margin:0 auto;">` : ''}
+                              </div>
+                            ` : '';
+
+                            pairsHTML += `
+                              <div style="
+                                display:grid;
+                                grid-template-columns:1fr 1fr;
+                                align-items:center;
+                                text-align:center;
+                                border-bottom:1px dashed #ccc;
+                                padding:10px 0;
+                              ">
+                                <div>${leftCell}</div>
+                                <div>${rightCell}</div>
+                              </div>
+                            `;
+                          }
+                        }
+
+                        pairsHTML += `</div>`; // close question block
+                        content = pairsHTML;
+                      }
 
                       div.innerHTML = header + content;
                       summaryDiv.appendChild(div);
